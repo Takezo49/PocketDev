@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PocketDev — Control AI from your phone</title>
+  <meta name="description" content="Run Claude Code, Aider, and more from your phone. One command to install. Scan QR to connect.">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'] },
+          colors: { lime: { 400: '#c6f91f' } }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { background: #05080A; }
+    .reveal { opacity: 0; transform: translateY(20px); transition: opacity 0.6s ease, transform 0.6s ease; }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+    .glow { box-shadow: 0 0 60px rgba(198, 249, 31, 0.08); }
+    .glow-text { text-shadow: 0 0 40px rgba(198, 249, 31, 0.3); }
+    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+    .cursor-blink { animation: blink 1s step-end infinite; }
+    @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+    .float { animation: float 6s ease-in-out infinite; }
+    @keyframes pulse-ring { 0% { transform: scale(1); opacity: 0.4; } 100% { transform: scale(1.8); opacity: 0; } }
+    .pulse-ring::before { content: ''; position: absolute; inset: -4px; border-radius: 50%; border: 1px solid #c6f91f; animation: pulse-ring 2s ease-out infinite; }
+    .dot-grid { background-image: radial-gradient(circle, rgba(255,255,255,0.03) 1px, transparent 1px); background-size: 24px 24px; }
+    .grid-lines { background-image: linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px); background-size: 60px 60px; }
+    .card-hover { transition: all 0.3s ease; }
+    .card-hover:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0,0,0,0.3), 0 0 0 1px rgba(198, 249, 31, 0.1); }
+    .btn-glow:hover { box-shadow: 0 0 20px rgba(198, 249, 31, 0.15); }
+    @keyframes gradient-x { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+    .animate-gradient { background-size: 200% 200%; animation: gradient-x 8s ease infinite; }
+  </style>
+</head>
+<body class="text-white antialiased overflow-x-hidden dot-grid">
+
+  <!-- Nav -->
+  <nav class="fixed top-0 w-full z-50 border-b border-dashed border-white/10 bg-[#05080A]/90 backdrop-blur-xl">
+    <div class="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
+      <a href="#" class="flex items-center gap-2">
+        <div class="w-7 h-7 rounded-lg bg-lime-400 flex items-center justify-center">
+          <svg class="w-4 h-4 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
+        </div>
+        <span class="font-semibold text-sm tracking-tight">PocketDev</span>
+      </a>
+      <div class="hidden md:flex items-center gap-8 text-xs text-white/50">
+        <a href="#features" class="hover:text-white transition-colors">Features</a>
+        <a href="#tools" class="hover:text-white transition-colors">Tools</a>
+        <a href="#install" class="hover:text-white transition-colors">Install</a>
+        <a href="#pricing" class="hover:text-white transition-colors">Pricing</a>
+      </div>
+      <div class="flex items-center gap-3">
+        <a href="https://github.com/lostboi/pocketdev" target="_blank" class="text-white/40 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+        </a>
+        <a href="#install" class="bg-white text-black text-xs font-medium px-4 py-2 hover:bg-slate-200 transition-colors">Get started</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="pt-36 pb-24 border-b border-dashed border-white/10 relative overflow-hidden grid-lines">
+    <div class="absolute -top-32 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-lime-400/5 rounded-full blur-[120px]" aria-hidden="true"></div>
+    <div class="max-w-6xl mx-auto px-6 relative z-10">
+      <div class="max-w-3xl">
+        <div class="flex items-center gap-3 mb-6 reveal">
+          <span class="uppercase text-[10px] font-semibold text-lime-400 tracking-[0.2em] font-mono">Open Source</span>
+          <span class="w-1.5 h-1.5 rounded-full bg-lime-400 pulse-ring relative"></span>
+        </div>
+        <h1 class="text-5xl md:text-6xl lg:text-7xl font-light tracking-tighter leading-[1.05] mb-6 reveal">
+          Control your AI<br>
+          <span class="font-semibold">from your pocket.</span>
+        </h1>
+        <div class="w-24 h-0.5 bg-gradient-to-r from-lime-400 via-lime-400/50 to-transparent mb-8 animate-gradient reveal"></div>
+        <p class="text-lg text-white/60 max-w-lg mb-10 leading-relaxed reveal">
+          Run Claude Code, Aider, Codex and more from your phone. One command to install. Scan QR to connect. Ship code from anywhere.
+        </p>
+        <div class="flex flex-col sm:flex-row items-start gap-4 reveal">
+          <a href="#install" class="bg-white text-black font-medium px-8 py-3.5 hover:bg-slate-200 transition-all text-sm btn-glow">
+            Get started free
+          </a>
+          <a href="#features" class="group flex items-center gap-2 text-white/70 hover:text-lime-400 transition-colors text-sm py-3.5">
+            See how it works
+            <svg class="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14m-7-7 7 7-7 7"/></svg>
+          </a>
+        </div>
+      </div>
+
+      <!-- Hero visual: Terminal + Phone mockup side by side -->
+      <div class="mt-16 grid grid-cols-1 md:grid-cols-2 gap-8 items-center reveal">
+
+        <!-- Phone mockup -->
+        <div class="order-2 md:order-1 flex justify-center">
+          <div class="w-[200px] h-[400px] bg-black rounded-[28px] border-2 border-white/10 p-2 float relative">
+            <div class="absolute top-0 left-1/2 -translate-x-1/2 w-16 h-4 bg-black rounded-b-xl z-10 border-b border-x border-white/10"></div>
+            <div class="w-full h-full bg-[#000] rounded-[20px] overflow-hidden flex flex-col">
+              <!-- Status bar -->
+              <div class="px-4 pt-3 pb-2 flex justify-between items-center">
+                <span class="text-[8px] text-white/40 font-mono">9:41</span>
+                <div class="flex gap-1"><div class="w-3 h-1.5 bg-white/20 rounded-sm"></div><div class="w-1.5 h-1.5 bg-white/20 rounded-full"></div></div>
+              </div>
+              <!-- App header -->
+              <div class="px-3 pb-2 flex justify-between items-center">
+                <span class="text-[10px] font-semibold text-white">DevBox</span>
+                <div class="w-5 h-5 rounded-full bg-white/5 flex items-center justify-center"><span class="text-[7px] text-white/40">A</span></div>
+              </div>
+              <!-- Device card -->
+              <div class="mx-3 mb-2 bg-white/5 rounded-lg px-2.5 py-2 flex items-center gap-2">
+                <div class="w-5 h-5 rounded bg-white/10 flex items-center justify-center"><svg class="w-3 h-3 text-white/40" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17.25v1.007a3 3 0 01-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0115 18.257V17.25m6-12V15a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 15V5.25"/></svg></div>
+                <div><p class="text-[8px] text-white font-medium">lostboi-laptop</p><p class="text-[6px] text-lime-400">Connected</p></div>
+              </div>
+              <!-- Tool cards -->
+              <div class="px-3 space-y-1.5 flex-1">
+                <div class="bg-white/5 rounded-lg px-2.5 py-2.5 flex items-center gap-2 border border-white/10">
+                  <div class="w-6 h-6 rounded-md bg-lime-400/10 flex items-center justify-center"><svg class="w-3 h-3 text-lime-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 7.5l3 2.25-3 2.25m4.5 0h3M3.75 3.75h16.5v16.5H3.75z"/></svg></div>
+                  <div class="flex-1"><p class="text-[8px] text-white font-medium">Claude Code</p><p class="text-[6px] text-white/40">AI coding agent</p></div>
+                  <div class="w-4 h-4 rounded-full bg-white flex items-center justify-center"><svg class="w-2 h-2 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5"/></svg></div>
+                </div>
+                <div class="bg-white/[0.03] rounded-lg px-2.5 py-2.5 flex items-center gap-2 opacity-40">
+                  <div class="w-6 h-6 rounded-md bg-white/5 flex items-center justify-center"><svg class="w-3 h-3 text-white/30" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.59 14.37a6 6 0 01-5.84 7.38v-4.8m5.84-2.58a14.98 14.98 0 006.16-12.12"/></svg></div>
+                  <div class="flex-1"><p class="text-[8px] text-white/50 font-medium">Antigravity</p><p class="text-[6px] text-white/30">Coming soon</p></div>
+                </div>
+                <div class="bg-white/[0.03] rounded-lg px-2.5 py-2.5 flex items-center gap-2 opacity-40">
+                  <div class="w-6 h-6 rounded-md bg-white/5 flex items-center justify-center"><svg class="w-3 h-3 text-white/30" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5"/></svg></div>
+                  <div class="flex-1"><p class="text-[8px] text-white/50 font-medium">Aider</p><p class="text-[6px] text-white/30">Coming soon</p></div>
+                </div>
+              </div>
+              <!-- Bottom bar -->
+              <div class="mx-auto mb-2 mt-2 w-24 h-1 bg-white/20 rounded-full"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Terminal -->
+        <div class="order-1 md:order-2">
+        <div class="bg-[#0A0D10] border border-white/10 rounded-xl overflow-hidden glow">
+          <div class="flex items-center gap-2 px-4 py-3 border-b border-white/5">
+            <div class="w-3 h-3 rounded-full bg-white/10"></div>
+            <div class="w-3 h-3 rounded-full bg-white/10"></div>
+            <div class="w-3 h-3 rounded-full bg-white/10"></div>
+            <span class="ml-3 text-[11px] text-white/30 font-mono">terminal</span>
+          </div>
+          <div class="p-6 font-mono text-sm leading-relaxed" id="hero-terminal">
+            <div class="flex items-center">
+              <span class="text-lime-400 mr-2">$</span>
+              <span class="text-white/70" id="hero-cmd"></span>
+              <span class="w-2 h-4 bg-lime-400 ml-0.5 cursor-blink" id="hero-cursor"></span>
+            </div>
+          </div>
+        </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- Social proof -->
+  <section class="border-b border-dashed border-white/10 py-12">
+    <div class="max-w-6xl mx-auto px-6">
+      <div class="flex flex-wrap items-center justify-center gap-8 md:gap-16 text-white/20">
+        <div class="flex items-center gap-3">
+          <div class="w-2 h-2 rounded-full bg-lime-400 animate-pulse"></div>
+          <span class="text-xs text-white/40">Just launched on npm</span>
+        </div>
+        <div class="w-px h-8 bg-white/10 hidden md:block"></div>
+        <div class="flex items-center gap-3">
+          <span class="text-2xl font-light text-white/60">&lt;2s</span>
+          <span class="text-xs text-white/30">to connect</span>
+        </div>
+        <div class="w-px h-8 bg-white/10 hidden md:block"></div>
+        <div class="flex items-center gap-3">
+          <span class="text-2xl font-light text-white/60">1</span>
+          <span class="text-xs text-white/30">command<br>to install</span>
+        </div>
+        <div class="w-px h-8 bg-white/10 hidden md:block"></div>
+        <div class="flex items-center gap-2">
+          <svg class="w-5 h-5 text-white/40" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+          <span class="text-xs text-white/30">100% open source</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- How it works -->
+  <section id="features" class="border-b border-dashed border-white/10">
+    <div class="max-w-6xl mx-auto px-6">
+      <div class="py-20">
+        <div class="flex items-center gap-3 mb-4 reveal">
+          <span class="uppercase text-[10px] font-semibold text-lime-400 tracking-[0.2em] font-mono">01. How it works</span>
+        </div>
+        <h2 class="text-4xl md:text-5xl font-light tracking-tighter mb-4 reveal">
+          Three steps. <span class="font-semibold">That's it.</span>
+        </h2>
+        <p class="text-white/60 max-w-md mb-16 reveal">From install to coding from your phone in under 60 seconds.</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-dashed divide-white/10 border-t border-dashed border-white/10">
+        <!-- Step 1 -->
+        <div class="p-8 md:p-10 group hover:bg-white/[0.02] transition-colors reveal">
+          <div class="w-10 h-10 rounded-xl bg-[#0E1216] border border-white/10 flex items-center justify-center mb-6 group-hover:border-lime-400/30 transition-colors">
+            <svg class="w-5 h-5 text-white/50 group-hover:text-lime-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 7.5l3 2.25-3 2.25m4.5 0h3M3.75 3.75h16.5v16.5H3.75z"/></svg>
+          </div>
+          <span class="text-lime-400 font-mono text-[10px] tracking-widest uppercase mb-3 block">Step 01</span>
+          <h3 class="text-white text-lg font-medium mb-3">Install the daemon</h3>
+          <div class="bg-[#0A0D10] border border-white/5 rounded-lg px-4 py-3 font-mono text-xs mb-4">
+            <span class="text-lime-400">$</span> <span class="text-white/70">npx devbox-daemon</span>
+          </div>
+          <p class="text-xs text-white/50 leading-relaxed">One command. No config. Works on macOS, Linux, and Windows with Node.js 18+.</p>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="p-8 md:p-10 group hover:bg-white/[0.02] transition-colors reveal">
+          <div class="w-10 h-10 rounded-xl bg-[#0E1216] border border-white/10 flex items-center justify-center mb-6 group-hover:border-lime-400/30 transition-colors">
+            <svg class="w-5 h-5 text-white/50 group-hover:text-lime-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zm0 9.75c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5zm9.75-9.75c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0113.5 9.375v-4.5z"/></svg>
+          </div>
+          <span class="text-lime-400 font-mono text-[10px] tracking-widest uppercase mb-3 block">Step 02</span>
+          <h3 class="text-white text-lg font-medium mb-3">Scan the QR code</h3>
+          <div class="bg-[#0A0D10] border border-white/5 rounded-lg h-20 flex items-center justify-center mb-4 gap-3">
+            <svg class="w-14 h-14 text-white/20" viewBox="0 0 24 24" fill="currentColor"><rect x="1" y="1" width="8" height="8" rx="1"/><rect x="15" y="1" width="8" height="8" rx="1"/><rect x="1" y="15" width="8" height="8" rx="1"/><rect x="4" y="4" width="2" height="2" fill="#05080A"/><rect x="18" y="4" width="2" height="2" fill="#05080A"/><rect x="4" y="18" width="2" height="2" fill="#05080A"/><rect x="11" y="1" width="2" height="2"/><rect x="11" y="5" width="2" height="2"/><rect x="11" y="11" width="2" height="2"/><rect x="15" y="11" width="2" height="2"/><rect x="19" y="11" width="2" height="2"/><rect x="15" y="15" width="2" height="2"/><rect x="19" y="19" width="2" height="2"/></svg>
+            <svg class="w-5 h-5 text-lime-400 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 11l5-5m0 0l5 5m-5-5v12"/></svg>
+          </div>
+          <p class="text-xs text-white/50 leading-relaxed">Open the PocketDev app on your phone and scan. Paired instantly. No passwords.</p>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="p-8 md:p-10 group hover:bg-white/[0.02] transition-colors reveal">
+          <div class="w-10 h-10 rounded-xl bg-[#0E1216] border border-white/10 flex items-center justify-center mb-6 group-hover:border-lime-400/30 transition-colors">
+            <svg class="w-5 h-5 text-white/50 group-hover:text-lime-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15.59 14.37a6 6 0 01-5.84 7.38v-4.8m5.84-2.58a14.98 14.98 0 006.16-12.12A14.98 14.98 0 009.631 8.41m5.96 5.96a14.926 14.926 0 01-5.841 2.58m-.119-8.54a6 6 0 00-7.381 5.84h4.8m2.581-5.84a14.927 14.927 0 00-2.58 5.84m2.699 2.7c-.103.021-.207.041-.311.06a15.09 15.09 0 01-2.448-2.448 14.9 14.9 0 01.06-.312m-2.24 2.39a4.493 4.493 0 00-1.757 4.306 4.493 4.493 0 004.306-1.758M16.5 9a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z"/></svg>
+          </div>
+          <span class="text-lime-400 font-mono text-[10px] tracking-widest uppercase mb-3 block">Step 03</span>
+          <h3 class="text-white text-lg font-medium mb-3">Ship from anywhere</h3>
+          <div class="bg-[#0A0D10] border border-white/5 rounded-lg px-4 py-3 font-mono text-[10px] text-white/40 space-y-1 mb-4">
+            <div><span class="text-lime-400">You:</span> <span class="text-white/60">Build a REST API with auth</span></div>
+            <div><span class="text-white/30">Claude:</span> <span class="text-white/40">Creating files...</span></div>
+            <div class="flex items-center gap-1"><span class="text-lime-400">+</span> <span class="text-lime-400/60">src/routes/auth.ts</span></div>
+          </div>
+          <p class="text-xs text-white/50 leading-relaxed">Send prompts, watch code generate live, see diffs with red/green — all from your phone.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features grid -->
+  <section class="border-b border-dashed border-white/10">
+    <div class="max-w-6xl mx-auto px-6 py-20">
+      <div class="flex items-center gap-3 mb-4 reveal">
+        <span class="uppercase text-[10px] font-semibold text-lime-400 tracking-[0.2em] font-mono">02. Features</span>
+      </div>
+      <h2 class="text-4xl md:text-5xl font-light tracking-tighter mb-16 reveal">
+        Everything your desktop has.<br><span class="font-semibold">In your pocket.</span>
+      </h2>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-dashed divide-white/10 border border-dashed border-white/10">
+        <div class="p-6 flex flex-col gap-3 group hover:bg-white/[0.02] transition-colors reveal">
+          <svg class="w-5 h-5 text-white/30 group-hover:text-lime-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z"/></svg>
+          <h4 class="text-white text-sm font-medium">Live streaming</h4>
+          <p class="text-[11px] text-white/40 leading-relaxed">Token-by-token response streaming. See code appear in real-time.</p>
+        </div>
+        <div class="p-6 flex flex-col gap-3 group hover:bg-white/[0.02] transition-colors reveal">
+          <svg class="w-5 h-5 text-white/30 group-hover:text-lime-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5"/></svg>
+          <h4 class="text-white text-sm font-medium">Code diffs</h4>
+          <p class="text-[11px] text-white/40 leading-relaxed">Red/green diff view with line numbers. See exactly what changed.</p>
+        </div>
+        <div class="p-6 flex flex-col gap-3 group hover:bg-white/[0.02] transition-colors reveal">
+          <svg class="w-5 h-5 text-white/30 group-hover:text-lime-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+          <h4 class="text-white text-sm font-medium">Model switching</h4>
+          <p class="text-[11px] text-white/40 leading-relaxed">Switch between Opus, Sonnet, Haiku on the fly. Change effort levels too.</p>
+        </div>
+        <div class="p-6 flex flex-col gap-3 group hover:bg-white/[0.02] transition-colors reveal">
+          <svg class="w-5 h-5 text-white/30 group-hover:text-lime-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          <h4 class="text-white text-sm font-medium">Cost tracking</h4>
+          <p class="text-[11px] text-white/40 leading-relaxed">See cumulative cost, token usage, and cache stats per session.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Supported Tools -->
+  <section id="tools" class="border-b border-dashed border-white/10">
+    <div class="max-w-6xl mx-auto px-6 py-20">
+      <div class="flex items-center gap-3 mb-4 reveal">
+        <span class="uppercase text-[10px] font-semibold text-lime-400 tracking-[0.2em] font-mono">03. Supported tools</span>
+      </div>
+      <h2 class="text-4xl md:text-5xl font-light tracking-tighter mb-16 reveal">
+        One app. <span class="font-semibold">Every AI tool.</span>
+      </h2>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="bg-[#0A0D10] border border-white/10 rounded-xl p-6 hover:border-lime-400/30 transition-all group reveal card-hover">
+          <div class="w-10 h-10 rounded-xl bg-lime-400/10 flex items-center justify-center mb-4">
+            <svg class="w-5 h-5 text-lime-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 7.5l3 2.25-3 2.25m4.5 0h3M3.75 3.75h16.5v16.5H3.75z"/></svg>
+          </div>
+          <h3 class="text-white font-medium mb-1">Claude Code</h3>
+          <p class="text-[11px] text-white/40">Anthropic's AI coding agent</p>
+          <span class="inline-block mt-3 text-[10px] font-mono text-lime-400 bg-lime-400/10 px-2 py-0.5 rounded">Available</span>
+        </div>
+        <div class="bg-[#0A0D10] border border-white/10 rounded-xl p-6 hover:border-white/20 transition-all reveal card-hover">
+          <div class="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center mb-4">
+            <svg class="w-5 h-5 text-white/30" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15.59 14.37a6 6 0 01-5.84 7.38v-4.8m5.84-2.58a14.98 14.98 0 006.16-12.12A14.98 14.98 0 009.631 8.41m5.96 5.96a14.926 14.926 0 01-5.841 2.58"/></svg>
+          </div>
+          <h3 class="text-white/50 font-medium mb-1">Antigravity</h3>
+          <p class="text-[11px] text-white/30">Full-stack AI assistant</p>
+          <span class="inline-block mt-3 text-[10px] font-mono text-white/30 bg-white/5 px-2 py-0.5 rounded">Coming soon</span>
+        </div>
+        <div class="bg-[#0A0D10] border border-white/10 rounded-xl p-6 hover:border-white/20 transition-all reveal card-hover">
+          <div class="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center mb-4">
+            <svg class="w-5 h-5 text-white/30" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5"/></svg>
+          </div>
+          <h3 class="text-white/50 font-medium mb-1">Aider</h3>
+          <p class="text-[11px] text-white/30">AI pair programming</p>
+          <span class="inline-block mt-3 text-[10px] font-mono text-white/30 bg-white/5 px-2 py-0.5 rounded">Coming soon</span>
+        </div>
+        <div class="bg-[#0A0D10] border border-white/10 rounded-xl p-6 hover:border-white/20 transition-all reveal card-hover">
+          <div class="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center mb-4">
+            <svg class="w-5 h-5 text-white/30" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"/></svg>
+          </div>
+          <h3 class="text-white/50 font-medium mb-1">Codex CLI</h3>
+          <p class="text-[11px] text-white/30">OpenAI's coding agent</p>
+          <span class="inline-block mt-3 text-[10px] font-mono text-white/30 bg-white/5 px-2 py-0.5 rounded">Coming soon</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Install -->
+  <section id="install" class="border-b border-dashed border-white/10">
+    <div class="max-w-6xl mx-auto px-6 py-20">
+      <div class="flex items-center gap-3 mb-4 reveal">
+        <span class="uppercase text-[10px] font-semibold text-lime-400 tracking-[0.2em] font-mono">04. Installation</span>
+      </div>
+      <h2 class="text-4xl md:text-5xl font-light tracking-tighter mb-16 reveal">
+        One command. <span class="font-semibold">Zero config.</span>
+      </h2>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <!-- Desktop -->
+        <div class="reveal">
+          <h3 class="text-white font-medium mb-4 flex items-center gap-2">
+            <svg class="w-4 h-4 text-lime-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17.25v1.007a3 3 0 01-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0115 18.257V17.25m6-12V15a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 15V5.25m18 0A2.25 2.25 0 0018.75 3H5.25A2.25 2.25 0 003 5.25m18 0V12a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 12V5.25"/></svg>
+            Desktop
+          </h3>
+          <div class="bg-[#0A0D10] border border-white/10 rounded-xl overflow-hidden">
+            <div class="flex items-center justify-between px-4 py-3 border-b border-white/5">
+              <span class="text-[11px] text-white/30 font-mono">terminal</span>
+              <button onclick="navigator.clipboard.writeText('npx devbox-daemon');this.textContent='Copied!';setTimeout(()=>this.textContent='Copy',1500)" class="text-[11px] text-white/40 hover:text-lime-400 transition-colors font-mono cursor-pointer">Copy</button>
+            </div>
+            <div class="p-5 font-mono text-sm">
+              <span class="text-lime-400">$</span> <span class="text-white/80">npx devbox-daemon</span>
+            </div>
+          </div>
+          <p class="text-xs text-white/40 mt-3">Requires Node.js 18+. Works on macOS, Linux, Windows.</p>
+        </div>
+
+        <!-- Mobile -->
+        <div class="reveal">
+          <h3 class="text-white font-medium mb-4 flex items-center gap-2">
+            <svg class="w-4 h-4 text-lime-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3"/></svg>
+            Mobile
+          </h3>
+          <div class="bg-[#0A0D10] border border-white/10 rounded-xl p-5 flex items-center gap-4">
+            <div class="w-12 h-12 rounded-xl bg-lime-400 flex items-center justify-center flex-shrink-0">
+              <svg class="w-6 h-6 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
+            </div>
+            <div>
+              <p class="text-white font-medium text-sm">PocketDev</p>
+              <p class="text-white/40 text-xs">Download on Google Play</p>
+            </div>
+            <a href="#" class="ml-auto bg-white text-black text-xs font-medium px-4 py-2 rounded-lg hover:bg-slate-200 transition-colors">Get</a>
+          </div>
+          <p class="text-xs text-white/40 mt-3">Android available now. iOS coming soon.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pricing -->
+  <section id="pricing" class="border-b border-dashed border-white/10">
+    <div class="max-w-6xl mx-auto px-6 py-20">
+      <div class="flex items-center gap-3 mb-4 reveal">
+        <span class="uppercase text-[10px] font-semibold text-lime-400 tracking-[0.2em] font-mono">05. Pricing</span>
+      </div>
+      <h2 class="text-4xl md:text-5xl font-light tracking-tighter mb-16 reveal">
+        Free forever. <span class="font-semibold">Pay for power.</span>
+      </h2>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl">
+        <div class="bg-[#0A0D10] border border-white/10 rounded-xl p-8 reveal">
+          <span class="text-lime-400 font-mono text-[10px] tracking-widest uppercase">Free</span>
+          <div class="mt-4 mb-6">
+            <span class="text-4xl font-light text-white">$0</span>
+            <span class="text-white/30 text-sm">/month</span>
+          </div>
+          <ul class="space-y-3 text-sm text-white/60 mb-8">
+            <li class="flex items-center gap-2"><svg class="w-4 h-4 text-lime-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>Same WiFi connection</li>
+            <li class="flex items-center gap-2"><svg class="w-4 h-4 text-lime-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>1 device</li>
+            <li class="flex items-center gap-2"><svg class="w-4 h-4 text-lime-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>All AI tools</li>
+            <li class="flex items-center gap-2"><svg class="w-4 h-4 text-lime-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>Open source</li>
+          </ul>
+          <a href="#install" class="block text-center bg-white/10 text-white text-sm font-medium py-3 rounded-lg hover:bg-white/15 transition-colors">Get started</a>
+        </div>
+
+        <div class="bg-[#0A0D10] border border-lime-400/30 rounded-xl p-8 relative glow reveal">
+          <span class="text-lime-400 font-mono text-[10px] tracking-widest uppercase">Pro</span>
+          <div class="mt-4 mb-6">
+            <span class="text-4xl font-light text-white">$9</span>
+            <span class="text-white/30 text-sm">/month</span>
+          </div>
+          <ul class="space-y-3 text-sm text-white/60 mb-8">
+            <li class="flex items-center gap-2"><svg class="w-4 h-4 text-lime-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>Connect from anywhere</li>
+            <li class="flex items-center gap-2"><svg class="w-4 h-4 text-lime-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>Unlimited devices</li>
+            <li class="flex items-center gap-2"><svg class="w-4 h-4 text-lime-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>Session history</li>
+            <li class="flex items-center gap-2"><svg class="w-4 h-4 text-lime-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>Push notifications</li>
+            <li class="flex items-center gap-2"><svg class="w-4 h-4 text-lime-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>Priority support</li>
+          </ul>
+          <a href="#" class="block text-center bg-lime-400 text-black text-sm font-semibold py-3 rounded-lg hover:bg-lime-300 transition-all hover:shadow-[0_0_25px_rgba(198,249,31,0.25)]">Upgrade to Pro</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="border-b border-dashed border-white/10">
+    <div class="max-w-6xl mx-auto px-6 py-24 text-center reveal">
+      <h2 class="text-4xl md:text-5xl font-light tracking-tighter mb-6">
+        Code from your <span class="font-semibold glow-text">couch.</span>
+      </h2>
+      <p class="text-white/50 max-w-md mx-auto mb-10">Stop walking back to your desk. Ship features, fix bugs, and deploy — all from your phone.</p>
+      <div class="flex justify-center gap-4">
+        <a href="#install" class="bg-white text-black font-medium px-8 py-3.5 hover:bg-slate-200 transition-all text-sm btn-glow">Get started free</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="max-w-6xl mx-auto px-6 py-12">
+    <div class="flex flex-col md:flex-row justify-between items-center gap-6">
+      <div class="flex items-center gap-2">
+        <div class="w-6 h-6 rounded-md bg-lime-400 flex items-center justify-center">
+          <svg class="w-3.5 h-3.5 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
+        </div>
+        <span class="text-sm text-white/50">PocketDev</span>
+      </div>
+      <div class="flex items-center gap-6 text-xs text-white/30">
+        <a href="https://github.com/lostboi/pocketdev" class="hover:text-white transition-colors">GitHub</a>
+        <a href="#" class="hover:text-white transition-colors">Docs</a>
+        <a href="#" class="hover:text-white transition-colors">Discord</a>
+        <span>MIT License</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script>
+    // Reveal on scroll
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } });
+    }, { threshold: 0.1 });
+    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+    // Hero terminal typing
+    (async function() {
+      const el = document.getElementById('hero-cmd');
+      const cursor = document.getElementById('hero-cursor');
+      const terminal = document.getElementById('hero-terminal');
+      const lines = [
+        { cmd: 'npx devbox-daemon', output: [
+          { html: '&nbsp;', delay: 300 },
+          { html: '<span class="text-lime-400">  DevBox Daemon v0.1.0</span>', delay: 100 },
+          { html: '<span class="text-white/30">  Scan QR code to connect...</span>', delay: 100 },
+          { html: '', delay: 200 },
+          { html: '<span class="text-white/40">  [paired]</span> <span class="text-lime-400">Phone connected!</span>', delay: 100 },
+          { html: '<span class="text-white/40">  [prompt]</span> <span class="text-white/60">Build a REST API with auth...</span>', delay: 100 },
+          { html: '<span class="text-lime-400">  + src/routes/auth.ts</span> <span class="text-white/30">(42 lines)</span>', delay: 80 },
+          { html: '<span class="text-lime-400">  + src/middleware/jwt.ts</span> <span class="text-white/30">(28 lines)</span>', delay: 80 },
+          { html: '<span class="text-white/50">  Done in 4.2s</span> <span class="text-lime-400">$0.0231</span>', delay: 200 },
+        ]},
+      ];
+
+      while (true) {
+        for (const line of lines) {
+          el.textContent = '';
+          for (let i = 0; i < line.cmd.length; i++) {
+            el.textContent += line.cmd[i];
+            await new Promise(r => setTimeout(r, 40 + Math.random() * 30));
+          }
+          cursor.style.display = 'none';
+
+          for (const out of line.output) {
+            await new Promise(r => setTimeout(r, out.delay));
+            const div = document.createElement('div');
+            div.className = 'flex items-center mt-1';
+            div.innerHTML = out.html !== undefined ? out.html : (out.text || '');
+            terminal.appendChild(div);
+          }
+
+          await new Promise(r => setTimeout(r, 3000));
+
+          // Reset
+          terminal.querySelectorAll('div:not(:first-child)').forEach(d => d.remove());
+          cursor.style.display = '';
+          await new Promise(r => setTimeout(r, 1000));
+        }
+      }
+    })();
+  </script>
+</body>
+</html>
