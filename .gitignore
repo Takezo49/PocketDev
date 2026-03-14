@@ -14,10 +14,10 @@ local.properties
 *.log
 /tmp/
 .npm/
-devbox_flutter/build/
-devbox_flutter/.dart_tool/
+pocketdev-app/build/
+pocketdev-app/.dart_tool/
 pubspec.lock
 
 # Separate repos — have their own git history
 ruflo/
-devbox/packages/mobile/
+pocketdev-server/packages/mobile/

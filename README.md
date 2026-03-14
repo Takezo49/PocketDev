@@ -122,7 +122,7 @@ Claude: Creating files...
 
 ```
 pocketdev/
-├── devbox/
+├── pocketdev-server/
 │   ├── packages/
 │   │   ├── daemon/        # Desktop daemon (npm: devbox-daemon)
 │   │   │   ├── src/
@@ -141,7 +141,7 @@ pocketdev/
 │   │   │   └── docker-compose.yml
 │   │   └── shared/        # Protocol type definitions
 │   └── ...
-├── devbox_flutter/        # Mobile app (Flutter)
+├── pocketdev-app/        # Mobile app (Flutter)
 │   └── lib/
 │       ├── screens/
 │       │   ├── auth_screen.dart       # Login / Register
@@ -205,7 +205,7 @@ Matches the landing page design language — dark, technical, minimal.
 ## 🐳 Self-hosting the relay
 
 ```bash
-cd devbox/packages/relay
+cd pocketdev-server/packages/relay
 cp .env.example .env  # Edit with your secrets
 docker compose up -d
 ```
@@ -272,16 +272,16 @@ git clone https://github.com/Takezo49/PocketDev.git
 cd PocketDev
 
 # Daemon
-cd devbox/packages/daemon
+cd pocketdev-server/packages/daemon
 npm install
 npm run dev
 
 # Flutter app
-cd devbox_flutter
+cd pocketdev-app
 flutter run
 
 # Relay
-cd devbox/packages/relay
+cd pocketdev-server/packages/relay
 npm install
 docker compose up -d  # postgres + redis
 npm run dev
