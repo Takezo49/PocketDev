@@ -1,14 +1,4 @@
-// DevBox Protocol Types
-
-
-
-
-
-
-
-
-
-
+// PocketDev Protocol Types
 
 // --- Cards ---
 
@@ -149,7 +139,7 @@ export type DaemonMessage =
   | { type: 'session:update'; session: Session }
   | { type: 'session:list'; sessions: Session[] }
   | { type: 'approval:request'; id: string; sessionId: string; prompt: string }
-  | { type: 'status'; online: boolean; hostname: string; sessions: number }
+  | { type: 'status'; online: boolean; hostname: string; homedir: string; sessions: number }
   | { type: 'paired'; success: boolean; daemonId: string }
   | { type: 'projects:data'; projects: ProjectInfo[] }
   | { type: 'projects:dirs'; path: string; dirs: DirEntry[] }

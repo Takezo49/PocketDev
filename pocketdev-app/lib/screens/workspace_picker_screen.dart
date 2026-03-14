@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../services/connection.dart';
 import '../services/workspace_state.dart';
 import '../theme/colors.dart';
+import '../utils/path_utils.dart';
 import 'folder_browser_screen.dart';
 
 class WorkspacePickerScreen extends StatefulWidget {
@@ -69,7 +70,7 @@ class _WorkspacePickerScreenState extends State<WorkspacePickerScreen> {
             children: [
               // Top bar
               Container(
-                padding: const EdgeInsets.fromLTRB(8, 10, 16, 10),
+                padding: const EdgeInsets.fromLTRB(8, 10, 8, 10),
                 decoration: const BoxDecoration(
                   border: Border(bottom: BorderSide(color: AppColors.border, width: 0.5)),
                 ),
@@ -286,7 +287,11 @@ class _WorkspacePickerScreenState extends State<WorkspacePickerScreen> {
                             _actionTile(
                               icon: Icons.home_rounded,
                               label: 'Start in home (~)',
-                              onTap: () => _selectAndNavigate('/root', 'home'),
+                              onTap: () {
+                                final conn = context.read<DevBoxConnection>();
+                                final home = conn.homedir.isNotEmpty ? conn.homedir : '/home';
+                                _selectAndNavigate(home, 'home');
+                              },
                             ),
                           ],
                         ),
@@ -526,18 +531,7 @@ class _ProjectCardState extends State<_ProjectCard> {
     }
   }
 
-  String _abbreviatePath(String path) {
-    final home = '/home/';
-    if (path.startsWith(home)) {
-      final rest = path.substring(home.length);
-      final parts = rest.split('/');
-      if (parts.length > 1) {
-        return '~/${parts.sublist(1).join('/')}';
-      }
-      return '~';
-    }
-    return path;
-  }
+  String _abbreviatePath(String path) => abbreviatePath(path);
 
   String _relativeTime(int? timestamp) {
     if (timestamp == null) return '';

@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../services/workspace_state.dart';
 import '../theme/colors.dart';
+import '../utils/path_utils.dart';
 
 class FolderBrowserScreen extends StatefulWidget {
   final void Function(String path) onSelectFolder;
@@ -301,17 +302,6 @@ class _SearchResultTile extends StatelessWidget {
     required this.onNavigate,
   });
 
-  String _abbreviatePath(String p) {
-    final home = '/home/';
-    if (p.startsWith(home)) {
-      final rest = p.substring(home.length);
-      final parts = rest.split('/');
-      if (parts.length > 1) return '~/${parts.sublist(1).join('/')}';
-      return '~';
-    }
-    return p;
-  }
-
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -330,7 +320,7 @@ class _SearchResultTile extends StatelessWidget {
                   Text(name,
                     style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500,
                       color: hasGit ? AppColors.text : AppColors.textSecondary)),
-                  Text(_abbreviatePath(path),
+                  Text(abbreviatePath(path),
                     style: GoogleFonts.jetBrainsMono(fontSize: 10, color: AppColors.textTertiary)),
                 ],
               ),
@@ -361,17 +351,6 @@ class _SearchFileTile extends StatelessWidget {
 
   const _SearchFileTile({required this.name, required this.path});
 
-  String _abbreviatePath(String p) {
-    final home = '/home/';
-    if (p.startsWith(home)) {
-      final rest = p.substring(home.length);
-      final parts = rest.split('/');
-      if (parts.length > 1) return '~/${parts.sublist(1).join('/')}';
-      return '~';
-    }
-    return p;
-  }
-
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -385,7 +364,7 @@ class _SearchFileTile extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(name, style: GoogleFonts.inter(fontSize: 13, color: AppColors.textTertiary)),
-                Text(_abbreviatePath(path),
+                Text(abbreviatePath(path),
                   style: GoogleFonts.jetBrainsMono(fontSize: 10, color: AppColors.textFaint)),
               ],
             ),

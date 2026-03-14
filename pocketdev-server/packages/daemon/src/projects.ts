@@ -1,5 +1,5 @@
 import { execSync } from 'child_process';
-import { readdirSync, statSync, existsSync } from 'fs';
+import { readdirSync, readFileSync, statSync, existsSync } from 'fs';
 import { join, basename } from 'path';
 import { homedir } from 'os';
 
@@ -218,7 +218,7 @@ export class ProjectScanner {
     // Try reading name from manifest files
     try {
       if (existsSync(join(dirPath, 'package.json'))) {
-        const pkg = JSON.parse(require('fs').readFileSync(join(dirPath, 'package.json'), 'utf-8'));
+        const pkg = JSON.parse(readFileSync(join(dirPath, 'package.json'), 'utf-8'));
         if (pkg.name) return pkg.name;
       }
     } catch {}

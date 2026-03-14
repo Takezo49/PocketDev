@@ -70,6 +70,7 @@ class WorkspaceState extends ChangeNotifier {
   // Browser search
   List<Map<String, dynamic>> _searchResults = [];
   bool _searching = false;
+  Timer? _loadingTimer;
 
   // Last workspace per tool (for fast path on dashboard)
   Map<String, Map<String, String>> _lastWorkspaces = {};
@@ -173,7 +174,8 @@ class WorkspaceState extends ChangeNotifier {
   }
 
   void _startLoadingTimeout() {
-    Future.delayed(const Duration(seconds: 5), () {
+    _loadingTimer?.cancel();
+    _loadingTimer = Timer(const Duration(seconds: 5), () {
       if (_loading) {
         _loading = false;
         _error = 'Request timed out — check connection';
@@ -270,6 +272,7 @@ class WorkspaceState extends ChangeNotifier {
 
   @override
   void dispose() {
+    _loadingTimer?.cancel();
     _sub?.cancel();
     super.dispose();
   }

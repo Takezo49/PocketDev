@@ -11,6 +11,7 @@ class DevBoxConnection extends ChangeNotifier {
   StreamSubscription? _channelSub;
   ConnectionStatus _status = ConnectionStatus.disconnected;
   String _hostname = '';
+  String _homedir = '';
   String _host = '';
   int _port = 0;
   String _secret = '';
@@ -20,6 +21,7 @@ class DevBoxConnection extends ChangeNotifier {
 
   ConnectionStatus get status => _status;
   String get hostname => _hostname;
+  String get homedir => _homedir;
   Stream<Map<String, dynamic>> get messages => _messageController.stream;
 
   /// Force status for preview/testing
@@ -78,6 +80,7 @@ class DevBoxConnection extends ChangeNotifier {
             }
             if (msg['type'] == 'status') {
               _hostname = msg['hostname'] ?? '';
+              _homedir = msg['homedir'] ?? '';
               notifyListeners();
             }
             _messageController.add(msg);

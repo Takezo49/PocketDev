@@ -27,14 +27,14 @@ class _ConnectScreenState extends State<ConnectScreen> {
     final barcode = capture.barcodes.firstOrNull;
     if (barcode == null) return;
     final data = barcode.rawValue ?? '';
-    if (!data.startsWith('devbox://')) return;
+    if (!data.startsWith('pocketdev://')) return;
 
     _scanned = true;
     setState(() { _loading = true; _error = null; });
     HapticFeedback.heavyImpact();
 
     try {
-      final encoded = data.replaceFirst('devbox://', '');
+      final encoded = data.replaceFirst('pocketdev://', '');
       final payload = jsonDecode(utf8.decode(base64Decode(encoded)));
       final auth = context.read<AuthService>();
 

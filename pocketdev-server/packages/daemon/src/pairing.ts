@@ -1,11 +1,11 @@
 import crypto from 'crypto';
 import qrcode from 'qrcode-terminal';
 import { nanoid } from 'nanoid';
-import os from 'os';
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs';
 import { join } from 'path';
 import { homedir } from 'os';
 import type { PairingPayload } from './types.js';
+import { getLocalIP } from './utils.js';
 
 const PAIRING_FILE = join(homedir(), '.devbox', 'pairing.json');
 
@@ -45,7 +45,7 @@ export class PairingManager {
   }
 
   displayQR(port: number): void {
-    const host = this.getLocalIP();
+    const host = getLocalIP();
     const payload: PairingPayload = {
       daemonId: this.daemonId,
       host,
@@ -54,9 +54,9 @@ export class PairingManager {
     };
 
     const encoded = Buffer.from(JSON.stringify(payload)).toString('base64');
-    const uri = `devbox://${encoded}`;
+    const uri = `pocketdev://${encoded}`;
 
-    console.log('\n  Scan this QR code with the DevBox app to pair:\n');
+    console.log('\n  Scan this QR code with the PocketDev app to pair:\n');
     qrcode.generate(uri, { small: true });
     console.log(`\n  Or connect manually: ws://${host}:${port}`);
     console.log(`  Pairing secret: ${this.secret}`);
@@ -75,17 +75,4 @@ export class PairingManager {
     return this.pairedDevices.has(deviceId);
   }
 
-  private getLocalIP(): string {
-    const interfaces = os.networkInterfaces();
-    for (const name of Object.keys(interfaces)) {
-      const nets = interfaces[name];
-      if (!nets) continue;
-      for (const net of nets) {
-        if (net.family === 'IPv4' && !net.internal) {
-          return net.address;
-        }
-      }
-    }
-    return '127.0.0.1';
-  }
 }

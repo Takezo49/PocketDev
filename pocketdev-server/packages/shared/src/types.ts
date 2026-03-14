@@ -1,13 +1,4 @@
-// DevBox Protocol vwegwegwegwegw
-// DevBox Protocolgwegwrgw
-// oiahfahfqwfqw-fqj
-// piehwirghpwrgb[wrgrgiowg
-// jsegbowbegewogbwoe
-// nice brooooooooo
-// DevBox Protocol v2
-// ============================================
-// DevBox Shared Types
-// ============================================
+// PocketDev Shared Protocol Types
 
 // --- Cards ---
 

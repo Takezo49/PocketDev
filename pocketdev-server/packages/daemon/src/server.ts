@@ -5,9 +5,9 @@ import { SessionManager } from './session-manager.js';
 import { ProjectScanner } from './projects.js';
 import { Dashboard } from './dashboard.js';
 import { getRecentCwds, loadWorkspaces, saveWorkspace, removeWorkspace, loadExcludedPaths, removeExcludedPath } from './persistence.js';
-import type { DaemonMessage, MobileMessage, Card, UsageInfo } from './types.js';
+import type { DaemonMessage, MobileMessage, Card, Session, UsageInfo } from './types.js';
 import os from 'os';
-import { basename } from 'path';
+import { basename, resolve } from 'path';
 
 interface Client {
   ws: WebSocket;
@@ -40,7 +40,7 @@ export class DevBoxServer extends EventEmitter {
         const resolvedPort = (addr && typeof addr === 'object') ? addr.port : port;
 
         this.pairing.displayQR(resolvedPort);
-        console.log(`  DevBox daemon listening on port ${resolvedPort}`);
+        console.log(`  PocketDev daemon listening on port ${resolvedPort}`);
         console.log(`  Hostname: ${os.hostname()}`);
         console.log(`  Waiting for mobile app to connect...\n`);
 
@@ -89,6 +89,7 @@ export class DevBoxServer extends EventEmitter {
           type: 'status',
           online: true,
           hostname: os.hostname(),
+          homedir: os.homedir(),
           sessions: this.sessions.listSessions().length,
         });
       });
@@ -140,12 +141,17 @@ export class DevBoxServer extends EventEmitter {
 
     switch (msg.type) {
       case 'session:create': {
-        const session = this.sessions.createSession(msg.tool, msg.cwd);
-        console.log(`  [session] Created ${session.tool} session: ${session.id}`);
-        this.broadcast({
-          type: 'session:update',
-          session: session.toJSON(),
-        });
+        try {
+          const session = this.sessions.createSession(msg.tool, msg.cwd);
+          console.log(`  [session] Created ${session.tool} session: ${session.id}`);
+          this.broadcast({
+            type: 'session:update',
+            session: session.toJSON(),
+          });
+        } catch (err: any) {
+          console.error(`  [session] Failed to create session:`, err.message);
+          this.sendTo(clientId, { type: 'error', message: `Failed to create session: ${err.message}` });
+        }
         break;
       }
 
@@ -234,6 +240,9 @@ export class DevBoxServer extends EventEmitter {
           // Filter out excluded paths
           const filtered = projects.filter(p => !excluded.has(p.path));
           this.sendTo(clientId, { type: 'projects:data', projects: filtered });
+        }).catch((err: any) => {
+          console.error(`  [projects] Error listing projects:`, err.message);
+          this.sendTo(clientId, { type: 'error', message: 'Failed to list projects' });
         });
         break;
       }
@@ -241,15 +250,23 @@ export class DevBoxServer extends EventEmitter {
       case 'projects:refresh': {
         console.log(`  [projects] Refreshing projects for ${clientId}`);
         this.projectScanner.invalidate();
-        const recentCwds2 = getRecentCwds();
-        this.projectScanner.getProjects(recentCwds2).then(projects => {
+        const recentCwds = getRecentCwds();
+        this.projectScanner.getProjects(recentCwds).then(projects => {
           this.sendTo(clientId, { type: 'projects:data', projects });
+        }).catch((err: any) => {
+          console.error(`  [projects] Error refreshing projects:`, err.message);
+          this.sendTo(clientId, { type: 'error', message: 'Failed to refresh projects' });
         });
         break;
       }
 
       case 'projects:browse': {
         const browsePath = msg.path;
+        // Path traversal mitigation
+        if (browsePath.includes('\0') || resolve(browsePath) !== browsePath) {
+          this.sendTo(clientId, { type: 'error', message: 'Invalid path' });
+          break;
+        }
         console.log(`  [projects] Browsing ${browsePath} for ${clientId}`);
         const dirs = this.projectScanner.listDirectories(browsePath);
         this.sendTo(clientId, { type: 'projects:dirs', path: browsePath, dirs });
@@ -283,7 +300,7 @@ export class DevBoxServer extends EventEmitter {
       this.broadcast({ type: 'card', card });
     });
 
-    this.sessions.on('session:update', (session: any) => {
+    this.sessions.on('session:update', (session: Session) => {
       this.broadcast({ type: 'session:update', session });
     });
 

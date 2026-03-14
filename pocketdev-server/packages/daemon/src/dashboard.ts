@@ -3,6 +3,7 @@ import QRCode from 'qrcode';
 import os from 'os';
 import type { PairingPayload } from './types.js';
 import type { PairingManager } from './pairing.js';
+import { getLocalIP } from './utils.js';
 
 export class Dashboard {
   private httpServer: http.Server | null = null;
@@ -15,10 +16,10 @@ export class Dashboard {
 
     return new Promise((resolve) => {
       this.httpServer = http.createServer(async (req, res) => {
-        const ip = this.getLocalIP();
+        const ip = getLocalIP();
 
         if (req.url === '/api/info') {
-          res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+          res.writeHead(200, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ host: ip, port: this.wsPort, secret: this.pairing!.secret, daemonId: this.pairing!.daemonId }));
           return;
         }
@@ -27,7 +28,7 @@ export class Dashboard {
           this.pairing!.regenerate();
           const svg = await this.generateQRSvg(ip);
           console.log(`  [dashboard] New pairing secret generated`);
-          res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+          res.writeHead(200, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ ok: true, secret: this.pairing!.secret, svg }));
           return;
         }
@@ -60,20 +61,8 @@ export class Dashboard {
   private async generateQRSvg(ip: string): Promise<string> {
     const payload: PairingPayload = { daemonId: this.pairing!.daemonId, host: ip, port: this.wsPort, secret: this.pairing!.secret };
     const encoded = Buffer.from(JSON.stringify(payload)).toString('base64');
-    const uri = `devbox://${encoded}`;
+    const uri = `pocketdev://${encoded}`;
     return QRCode.toString(uri, { type: 'svg', margin: 1, width: 260 });
-  }
-
-  private getLocalIP(): string {
-    const interfaces = os.networkInterfaces();
-    for (const name of Object.keys(interfaces)) {
-      const nets = interfaces[name];
-      if (!nets) continue;
-      for (const net of nets) {
-        if (net.family === 'IPv4' && !net.internal) return net.address;
-      }
-    }
-    return '127.0.0.1';
   }
 
   private renderPage(ip: string, qrSvg: string): string {
@@ -85,7 +74,7 @@ export class Dashboard {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>DevBox — Connect</title>
+<title>PocketDev — Connect</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
@@ -155,12 +144,12 @@ export class Dashboard {
 </head>
 <body>
 <div class="container">
-  <h1>DevBox</h1>
+  <h1>PocketDev</h1>
   <p class="tagline">Your AI, from your phone</p>
 
   <div class="qr-box" id="qrBox">${qrSvg}</div>
 
-  <p class="scan-label">Scan with DevBox app to connect</p>
+  <p class="scan-label">Scan with PocketDev app to connect</p>
 
   <button class="regen-btn" id="regenBtn" onclick="regenerate()">Generate New QR Code</button>
 
