@@ -54,6 +54,47 @@ export class ProjectScanner {
     this.cache = null;
   }
 
+  searchDirectories(query: string): { path: string; name: string; hasGit: boolean; isFile: boolean }[] {
+    const results: { path: string; name: string; hasGit: boolean; isFile: boolean }[] = [];
+    const q = query.toLowerCase();
+    const home = homedir();
+
+    const search = (dir: string, depth: number) => {
+      if (depth > 4 || results.length >= 50) return;
+      try {
+        const entries = readdirSync(dir, { withFileTypes: true });
+        for (const entry of entries) {
+          if (entry.name.startsWith('.') && depth < 2) continue;
+          const fullPath = join(dir, entry.name);
+
+          if (entry.isDirectory()) {
+            if (SKIP_DIRS.has(entry.name)) continue;
+            if (entry.name.toLowerCase().includes(q)) {
+              const hasGit = existsSync(join(fullPath, '.git'));
+              results.push({ path: fullPath, name: entry.name, hasGit, isFile: false });
+            }
+            if (results.length < 50) {
+              search(fullPath, depth + 1);
+            }
+          } else if (entry.isFile()) {
+            if (entry.name.toLowerCase().includes(q)) {
+              results.push({ path: fullPath, name: entry.name, hasGit: false, isFile: true });
+            }
+          }
+        }
+      } catch {}
+    };
+
+    search(home, 0);
+    // Sort: dirs first (git repos on top), then files
+    results.sort((a, b) => {
+      if (a.isFile !== b.isFile) return a.isFile ? 1 : -1;
+      if (!a.isFile && !b.isFile && a.hasGit !== b.hasGit) return a.hasGit ? -1 : 1;
+      return a.name.localeCompare(b.name);
+    });
+    return results;
+  }
+
   listDirectories(dirPath: string): DirEntry[] {
     try {
       const entries = readdirSync(dirPath, { withFileTypes: true });
@@ -63,18 +104,40 @@ export class ProjectScanner {
         if (entry.isDirectory()) {
           if (SKIP_DIRS.has(entry.name)) continue;
           const fullPath = join(dirPath, entry.name);
-          const hasGit = existsSync(join(fullPath, '.git'));
+          let hasGit = existsSync(join(fullPath, '.git'));
+          // Also check if any immediate child has .git (parent of projects)
+          if (!hasGit) {
+            try {
+              const children = readdirSync(fullPath, { withFileTypes: true });
+              hasGit = children.some(c => c.isDirectory() && existsSync(join(fullPath, c.name, '.git')));
+            } catch {}
+          }
           dirs.push({ name: entry.name, hasGit, isFile: false });
         } else if (entry.isFile()) {
           files.push({ name: entry.name, hasGit: false, isFile: true });
         }
       }
-      dirs.sort((a, b) => {
+      // Split dirs into regular and dotdirs
+      const regularDirs = dirs.filter(d => !d.name.startsWith('.'));
+      const dotDirs = dirs.filter(d => d.name.startsWith('.'));
+      // Split files into regular and dotfiles
+      const regularFiles = files.filter(f => !f.name.startsWith('.'));
+      const dotFiles = files.filter(f => f.name.startsWith('.'));
+
+      // Sort each group: git repos first, then alphabetical
+      const sortDirs = (arr: DirEntry[]) => arr.sort((a, b) => {
         if (a.hasGit !== b.hasGit) return a.hasGit ? -1 : 1;
         return a.name.localeCompare(b.name);
       });
-      files.sort((a, b) => a.name.localeCompare(b.name));
-      return [...dirs, ...files];
+      const sortByName = (arr: DirEntry[]) => arr.sort((a, b) => a.name.localeCompare(b.name));
+
+      sortDirs(regularDirs);
+      sortDirs(dotDirs);
+      sortByName(regularFiles);
+      sortByName(dotFiles);
+
+      // Order: regular dirs → regular files → dotdirs → dotfiles
+      return [...regularDirs, ...regularFiles, ...dotDirs, ...dotFiles];
     } catch {
       return [];
     }

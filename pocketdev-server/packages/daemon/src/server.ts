@@ -7,6 +7,7 @@ import { Dashboard } from './dashboard.js';
 import { getRecentCwds, loadWorkspaces, saveWorkspace, removeWorkspace, loadExcludedPaths, removeExcludedPath } from './persistence.js';
 import type { DaemonMessage, MobileMessage, Card, UsageInfo } from './types.js';
 import os from 'os';
+import { basename } from 'path';
 
 interface Client {
   ws: WebSocket;
@@ -210,7 +211,7 @@ export class DevBoxServer extends EventEmitter {
             } else if (session.cwd) {
               projects.unshift({
                 path: session.cwd,
-                name: session.cwd.split('/').pop() || session.cwd,
+                name: basename(session.cwd) || session.cwd,
                 dirty: false,
                 changedFiles: 0,
                 tier: 'active',
@@ -252,6 +253,13 @@ export class DevBoxServer extends EventEmitter {
         console.log(`  [projects] Browsing ${browsePath} for ${clientId}`);
         const dirs = this.projectScanner.listDirectories(browsePath);
         this.sendTo(clientId, { type: 'projects:dirs', path: browsePath, dirs });
+        break;
+      }
+
+      case 'projects:search': {
+        console.log(`  [projects] Searching "${msg.query}" for ${clientId}`);
+        const results = this.projectScanner.searchDirectories(msg.query);
+        this.sendTo(clientId, { type: 'projects:search_results', results });
         break;
       }
 

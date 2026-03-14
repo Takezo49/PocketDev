@@ -67,6 +67,10 @@ class WorkspaceState extends ChangeNotifier {
   String _searchQuery = '';
   String? _error;
 
+  // Browser search
+  List<Map<String, dynamic>> _searchResults = [];
+  bool _searching = false;
+
   // Last workspace per tool (for fast path on dashboard)
   Map<String, Map<String, String>> _lastWorkspaces = {};
   bool _prefsLoaded = false;
@@ -79,6 +83,8 @@ class WorkspaceState extends ChangeNotifier {
   bool get loading => _loading;
   String get searchQuery => _searchQuery;
   String? get error => _error;
+  List<Map<String, dynamic>> get searchResults => _searchResults;
+  bool get searching => _searching;
 
   List<ProjectInfo> get activeProjects =>
       _projects.where((p) => p.tier == 'active').toList();
@@ -126,8 +132,16 @@ class WorkspaceState extends ChangeNotifier {
         notifyListeners();
         break;
 
+      case 'projects:search_results':
+        final list = msg['results'] as List? ?? [];
+        _searchResults = list.map((r) => Map<String, dynamic>.from(r as Map)).toList();
+        _searching = false;
+        notifyListeners();
+        break;
+
       case 'error':
         _loading = false;
+        _searching = false;
         _error = msg['message'] ?? 'Unknown error';
         notifyListeners();
         break;
@@ -170,6 +184,24 @@ class WorkspaceState extends ChangeNotifier {
 
   void setSearchQuery(String query) {
     _searchQuery = query;
+    notifyListeners();
+  }
+
+  void searchFolders(String query) {
+    if (query.trim().isEmpty) {
+      _searchResults = [];
+      _searching = false;
+      notifyListeners();
+      return;
+    }
+    _searching = true;
+    notifyListeners();
+    _conn.send({'type': 'projects:search', 'query': query.trim()});
+  }
+
+  void clearSearchResults() {
+    _searchResults = [];
+    _searching = false;
     notifyListeners();
   }
 

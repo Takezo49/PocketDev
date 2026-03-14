@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -15,14 +16,36 @@ class FolderBrowserScreen extends StatefulWidget {
 }
 
 class _FolderBrowserScreenState extends State<FolderBrowserScreen> {
+  final _searchCtrl = TextEditingController();
+  Timer? _debounce;
+  bool _isSearching = false;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      // Start browsing from common project directories
       final ws = context.read<WorkspaceState>();
       ws.browseTo('/home');
     });
+  }
+
+  void _onSearchChanged(String query) {
+    _debounce?.cancel();
+    if (query.isEmpty) {
+      setState(() => _isSearching = false);
+      context.read<WorkspaceState>().clearSearchResults();
+      return;
+    }
+    setState(() => _isSearching = true);
+    _debounce = Timer(const Duration(milliseconds: 300), () {
+      context.read<WorkspaceState>().searchFolders(query);
+    });
+  }
+
+  void _clearSearch() {
+    _searchCtrl.clear();
+    setState(() => _isSearching = false);
+    context.read<WorkspaceState>().clearSearchResults();
   }
 
   @override
@@ -30,6 +53,7 @@ class _FolderBrowserScreenState extends State<FolderBrowserScreen> {
     final ws = context.watch<WorkspaceState>();
     final path = ws.currentBrowsePath;
     final dirs = ws.currentDirs;
+    final results = ws.searchResults;
 
     return Scaffold(
       backgroundColor: AppColors.bg,
@@ -59,10 +83,10 @@ class _FolderBrowserScreenState extends State<FolderBrowserScreen> {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  // Navigate up
                   if (path.isNotEmpty && path != '/')
                     GestureDetector(
                       onTap: () {
+                        _clearSearch();
                         final parent = path.substring(0, path.lastIndexOf('/'));
                         ws.browseTo(parent.isEmpty ? '/' : parent);
                       },
@@ -71,9 +95,11 @@ class _FolderBrowserScreenState extends State<FolderBrowserScreen> {
                         child: Icon(Icons.arrow_upward_rounded, size: 18, color: AppColors.textTertiary),
                       ),
                     ),
-                  // Home button
                   GestureDetector(
-                    onTap: () => ws.browseTo('/home'),
+                    onTap: () {
+                      _clearSearch();
+                      ws.browseTo('/home');
+                    },
                     child: const Padding(
                       padding: EdgeInsets.all(6),
                       child: Icon(Icons.home_rounded, size: 18, color: AppColors.textTertiary),
@@ -83,86 +109,288 @@ class _FolderBrowserScreenState extends State<FolderBrowserScreen> {
               ),
             ),
 
+            // Search bar
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+              child: TextField(
+                controller: _searchCtrl,
+                onChanged: _onSearchChanged,
+                style: GoogleFonts.inter(fontSize: 13, color: AppColors.text),
+                decoration: InputDecoration(
+                  hintText: 'Search folders...',
+                  hintStyle: GoogleFonts.inter(fontSize: 13, color: AppColors.textTertiary),
+                  filled: true,
+                  fillColor: AppColors.surface,
+                  prefixIcon: const Icon(Icons.search_rounded, size: 16, color: AppColors.textTertiary),
+                  suffixIcon: _isSearching
+                      ? GestureDetector(
+                          onTap: _clearSearch,
+                          child: const Icon(Icons.close_rounded, size: 16, color: AppColors.textTertiary),
+                        )
+                      : null,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  isDense: true,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(color: AppColors.border, width: 0.5),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(color: AppColors.border, width: 0.5),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: AppColors.accent.withValues(alpha: 0.3), width: 0.5),
+                  ),
+                ),
+              ),
+            ),
+
             // Loading
-            if (ws.loading)
+            if (ws.loading || ws.searching)
               const Padding(
-                padding: EdgeInsets.symmetric(vertical: 16),
+                padding: EdgeInsets.symmetric(vertical: 8),
                 child: SizedBox(
                   width: 16, height: 16,
                   child: CircularProgressIndicator(strokeWidth: 1.5, color: AppColors.accent),
                 ),
               ),
 
-            // Directory list
+            // Content: search results or directory listing
             Expanded(
-              child: ws.error != null
-                  ? Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.error_outline_rounded, size: 24, color: AppColors.textTertiary),
-                          const SizedBox(height: 8),
-                          Text(ws.error!, style: GoogleFonts.inter(fontSize: 13, color: AppColors.textTertiary)),
-                          const SizedBox(height: 12),
-                          GestureDetector(
-                            onTap: () => ws.browseTo(path.isEmpty ? '/home' : path),
-                            child: Text('Retry', style: GoogleFonts.inter(fontSize: 13, color: AppColors.accent)),
-                          ),
-                        ],
-                      ),
-                    )
-                  : dirs.isEmpty && !ws.loading
-                  ? Center(
-                      child: Text('Empty directory',
-                        style: GoogleFonts.inter(fontSize: 13, color: AppColors.textTertiary)),
-                    )
-                  : ListView.builder(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      itemCount: dirs.length,
-                      itemBuilder: (_, i) {
-                        final dir = dirs[i];
-                        if (dir.isFile) {
-                          return _FileTile(dir: dir);
-                        }
-                        return _DirTile(
-                          dir: dir,
-                          onTap: () {
-                            HapticFeedback.selectionClick();
-                            final newPath = path == '/' ? '/${dir.name}' : '$path/${dir.name}';
-                            ws.browseTo(newPath);
-                          },
-                        );
-                      },
-                    ),
+              child: _isSearching
+                  ? _buildSearchResults(ws, results)
+                  : _buildDirectoryListing(ws, path, dirs),
             ),
 
-            // Open here button
-            Container(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-              decoration: const BoxDecoration(
-                border: Border(top: BorderSide(color: AppColors.border, width: 0.5)),
-              ),
-              child: GestureDetector(
-                onTap: () {
-                  HapticFeedback.mediumImpact();
-                  widget.onSelectFolder(path);
-                },
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  decoration: BoxDecoration(
-                    color: AppColors.text,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Center(
-                    child: Text('Open here',
-                      style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.bg)),
+            // Open here button (only when not searching)
+            if (!_isSearching)
+              Container(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                decoration: const BoxDecoration(
+                  border: Border(top: BorderSide(color: AppColors.border, width: 0.5)),
+                ),
+                child: GestureDetector(
+                  onTap: () {
+                    HapticFeedback.mediumImpact();
+                    widget.onSelectFolder(path);
+                  },
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    decoration: BoxDecoration(
+                      color: AppColors.text,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Center(
+                      child: Text('Open here',
+                        style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.bg)),
+                    ),
                   ),
                 ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSearchResults(WorkspaceState ws, List<Map<String, dynamic>> results) {
+    if (results.isEmpty && !ws.searching) {
+      return Center(
+        child: Text(
+          _searchCtrl.text.isEmpty ? '' : 'No matches found',
+          style: GoogleFonts.inter(fontSize: 13, color: AppColors.textTertiary),
+        ),
+      );
+    }
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      itemCount: results.length,
+      itemBuilder: (_, i) {
+        final r = results[i];
+        final rPath = r['path'] as String;
+        final rName = r['name'] as String;
+        final hasGit = r['hasGit'] as bool? ?? false;
+        final isFile = r['isFile'] as bool? ?? false;
+        if (isFile) {
+          return _SearchFileTile(name: rName, path: rPath);
+        }
+        return _SearchResultTile(
+          name: rName,
+          path: rPath,
+          hasGit: hasGit,
+          onTap: () {
+            HapticFeedback.mediumImpact();
+            widget.onSelectFolder(rPath);
+          },
+          onNavigate: () {
+            HapticFeedback.selectionClick();
+            _clearSearch();
+            ws.browseTo(rPath);
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildDirectoryListing(WorkspaceState ws, String path, List<DirEntry> dirs) {
+    if (ws.error != null) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.error_outline_rounded, size: 24, color: AppColors.textTertiary),
+            const SizedBox(height: 8),
+            Text(ws.error!, style: GoogleFonts.inter(fontSize: 13, color: AppColors.textTertiary)),
+            const SizedBox(height: 12),
+            GestureDetector(
+              onTap: () => ws.browseTo(path.isEmpty ? '/home' : path),
+              child: Text('Retry', style: GoogleFonts.inter(fontSize: 13, color: AppColors.accent)),
+            ),
+          ],
+        ),
+      );
+    }
+    if (dirs.isEmpty && !ws.loading) {
+      return Center(
+        child: Text('Empty directory',
+          style: GoogleFonts.inter(fontSize: 13, color: AppColors.textTertiary)),
+      );
+    }
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      itemCount: dirs.length,
+      itemBuilder: (_, i) {
+        final dir = dirs[i];
+        if (dir.isFile) {
+          return _FileTile(dir: dir);
+        }
+        return _DirTile(
+          dir: dir,
+          onTap: () {
+            HapticFeedback.selectionClick();
+            final newPath = path == '/' ? '/${dir.name}' : '$path/${dir.name}';
+            ws.browseTo(newPath);
+          },
+        );
+      },
+    );
+  }
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    _debounce?.cancel();
+    super.dispose();
+  }
+}
+
+class _SearchResultTile extends StatelessWidget {
+  final String name;
+  final String path;
+  final bool hasGit;
+  final VoidCallback onTap;
+  final VoidCallback onNavigate;
+
+  const _SearchResultTile({
+    required this.name,
+    required this.path,
+    required this.hasGit,
+    required this.onTap,
+    required this.onNavigate,
+  });
+
+  String _abbreviatePath(String p) {
+    final home = '/home/';
+    if (p.startsWith(home)) {
+      final rest = p.substring(home.length);
+      final parts = rest.split('/');
+      if (parts.length > 1) return '~/${parts.sublist(1).join('/')}';
+      return '~';
+    }
+    return p;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        child: Row(
+          children: [
+            Icon(Icons.folder_rounded, size: 18,
+              color: hasGit ? AppColors.accent : AppColors.textTertiary),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(name,
+                    style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500,
+                      color: hasGit ? AppColors.text : AppColors.textSecondary)),
+                  Text(_abbreviatePath(path),
+                    style: GoogleFonts.jetBrainsMono(fontSize: 10, color: AppColors.textTertiary)),
+                ],
+              ),
+            ),
+            if (hasGit)
+              Container(
+                width: 5, height: 5,
+                margin: const EdgeInsets.only(right: 8),
+                decoration: const BoxDecoration(shape: BoxShape.circle, color: AppColors.accent),
+              ),
+            GestureDetector(
+              onTap: onNavigate,
+              child: Container(
+                padding: const EdgeInsets.all(6),
+                child: const Icon(Icons.chevron_right_rounded, size: 16, color: AppColors.textFaint),
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _SearchFileTile extends StatelessWidget {
+  final String name;
+  final String path;
+
+  const _SearchFileTile({required this.name, required this.path});
+
+  String _abbreviatePath(String p) {
+    final home = '/home/';
+    if (p.startsWith(home)) {
+      final rest = p.substring(home.length);
+      final parts = rest.split('/');
+      if (parts.length > 1) return '~/${parts.sublist(1).join('/')}';
+      return '~';
+    }
+    return p;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        children: [
+          const Icon(Icons.insert_drive_file_rounded, size: 16, color: AppColors.textFaint),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(name, style: GoogleFonts.inter(fontSize: 13, color: AppColors.textTertiary)),
+                Text(_abbreviatePath(path),
+                  style: GoogleFonts.jetBrainsMono(fontSize: 10, color: AppColors.textFaint)),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
