@@ -115,6 +115,26 @@ export interface Session {
 
 // --- Protocol Messages ---
 
+// --- Project Discovery ---
+
+export interface ProjectInfo {
+  path: string;
+  name: string;
+  branch?: string;
+  dirty: boolean;
+  changedFiles: number;
+  lastCommitMsg?: string;
+  framework?: string;
+  lastUsed?: number;
+  tier: 'active' | 'recent' | 'discovered';
+}
+
+export interface DirEntry {
+  name: string;
+  hasGit: boolean;
+  isFile: boolean;
+}
+
 // Daemon -> Mobile
 export type DaemonMessage =
   | { type: 'card'; card: Card }
@@ -131,6 +151,8 @@ export type DaemonMessage =
   | { type: 'approval:request'; id: string; sessionId: string; prompt: string }
   | { type: 'status'; online: boolean; hostname: string; sessions: number }
   | { type: 'paired'; success: boolean; daemonId: string }
+  | { type: 'projects:data'; projects: ProjectInfo[] }
+  | { type: 'projects:dirs'; path: string; dirs: DirEntry[] }
   | { type: 'error'; message: string };
 
 // Mobile -> Daemon
@@ -142,7 +164,12 @@ export type MobileMessage =
   | { type: 'session:list' }
   | { type: 'pair:verify'; token: string }
   | { type: 'session:cancel'; sessionId: string }
-  | { type: 'session:config'; sessionId: string; config: SessionConfig };
+  | { type: 'session:config'; sessionId: string; config: SessionConfig }
+  | { type: 'projects:list' }
+  | { type: 'projects:refresh' }
+  | { type: 'projects:browse'; path: string }
+  | { type: 'workspace:save'; path: string; name: string }
+  | { type: 'workspace:remove'; path: string };
 
 // --- Pairing ---
 

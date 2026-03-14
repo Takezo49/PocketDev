@@ -122,6 +122,9 @@ class SessionState extends ChangeNotifier {
   String? _activeSessionId;
   String? _pendingCommand;
 
+  /// Working directory for new sessions (set by workspace picker)
+  String? workspaceCwd;
+
   // Usage tracking
   UsageInfo? _lastUsage;
   double _cumulativeCost = 0;
@@ -409,7 +412,7 @@ class SessionState extends ChangeNotifier {
     }
 
     if (_activeSessionId == null) {
-      createSession('claude');
+      createSession('claude', cwd: workspaceCwd);
       _pendingCommand = text;
     } else {
       sendCommand(_activeSessionId!, text);

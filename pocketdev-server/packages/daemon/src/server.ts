@@ -2,7 +2,9 @@ import { WebSocketServer, WebSocket } from 'ws';
 import { EventEmitter } from 'events';
 import { PairingManager } from './pairing.js';
 import { SessionManager } from './session-manager.js';
+import { ProjectScanner } from './projects.js';
 import { Dashboard } from './dashboard.js';
+import { getRecentCwds, loadWorkspaces, saveWorkspace, removeWorkspace, loadExcludedPaths, removeExcludedPath } from './persistence.js';
 import type { DaemonMessage, MobileMessage, Card, UsageInfo } from './types.js';
 import os from 'os';
 
@@ -17,6 +19,7 @@ export class DevBoxServer extends EventEmitter {
   private clients = new Map<string, Client>();
   private pairing: PairingManager;
   private sessions: SessionManager;
+  private projectScanner: ProjectScanner;
   private dashboard: Dashboard;
   private clientCounter = 0;
 
@@ -24,6 +27,7 @@ export class DevBoxServer extends EventEmitter {
     super();
     this.pairing = new PairingManager();
     this.sessions = new SessionManager();
+    this.projectScanner = new ProjectScanner();
     this.dashboard = new Dashboard();
     this.setupSessionEvents();
   }
@@ -188,6 +192,79 @@ export class DevBoxServer extends EventEmitter {
         } else {
           this.sendTo(clientId, { type: 'error', message: `Session ${msg.sessionId} not found` });
         }
+        break;
+      }
+
+      case 'projects:list': {
+        console.log(`  [projects] Listing projects for ${clientId}`);
+        const recentCwds = getRecentCwds();
+        const savedWorkspaces = loadWorkspaces();
+        const excluded = loadExcludedPaths();
+        const activeSessions = this.sessions.listSessions();
+        this.projectScanner.getProjects(recentCwds).then(projects => {
+          // Merge active session info
+          for (const session of activeSessions) {
+            const idx = projects.findIndex(p => p.path === session.cwd);
+            if (idx >= 0) {
+              projects[idx] = { ...projects[idx], tier: 'active' };
+            } else if (session.cwd) {
+              projects.unshift({
+                path: session.cwd,
+                name: session.cwd.split('/').pop() || session.cwd,
+                dirty: false,
+                changedFiles: 0,
+                tier: 'active',
+              });
+            }
+          }
+          // Merge saved workspaces (user-selected dirs that scanner might miss)
+          for (const sw of savedWorkspaces) {
+            if (!projects.some(p => p.path === sw.path)) {
+              projects.push({
+                path: sw.path,
+                name: sw.name,
+                dirty: false,
+                changedFiles: 0,
+                lastUsed: sw.lastUsed,
+                tier: 'recent',
+              });
+            }
+          }
+          // Filter out excluded paths
+          const filtered = projects.filter(p => !excluded.has(p.path));
+          this.sendTo(clientId, { type: 'projects:data', projects: filtered });
+        });
+        break;
+      }
+
+      case 'projects:refresh': {
+        console.log(`  [projects] Refreshing projects for ${clientId}`);
+        this.projectScanner.invalidate();
+        const recentCwds2 = getRecentCwds();
+        this.projectScanner.getProjects(recentCwds2).then(projects => {
+          this.sendTo(clientId, { type: 'projects:data', projects });
+        });
+        break;
+      }
+
+      case 'projects:browse': {
+        const browsePath = msg.path;
+        console.log(`  [projects] Browsing ${browsePath} for ${clientId}`);
+        const dirs = this.projectScanner.listDirectories(browsePath);
+        this.sendTo(clientId, { type: 'projects:dirs', path: browsePath, dirs });
+        break;
+      }
+
+      case 'workspace:save': {
+        console.log(`  [workspace] Saving ${msg.path} for ${clientId}`);
+        saveWorkspace(msg.path, msg.name);
+        removeExcludedPath(msg.path);
+        break;
+      }
+
+      case 'workspace:remove': {
+        console.log(`  [workspace] Removing ${msg.path} for ${clientId}`);
+        removeWorkspace(msg.path);
         break;
       }
     }

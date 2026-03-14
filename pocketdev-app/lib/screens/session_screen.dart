@@ -12,8 +12,10 @@ import '../theme/colors.dart';
 class SessionScreen extends StatefulWidget {
   final VoidCallback? onNeedsPairing;
   final VoidCallback? onBack;
+  final VoidCallback? onChangeWorkspace;
+  final String? workspaceName;
 
-  const SessionScreen({super.key, this.onNeedsPairing, this.onBack});
+  const SessionScreen({super.key, this.onNeedsPairing, this.onBack, this.onChangeWorkspace, this.workspaceName});
 
   @override
   State<SessionScreen> createState() => _SessionScreenState();
@@ -44,7 +46,7 @@ class _SessionScreenState extends State<SessionScreen> {
     HapticFeedback.lightImpact();
     final state = context.read<SessionState>();
     if (state.activeSessionId == null) {
-      state.createSession('claude');
+      state.createSession('claude', cwd: state.workspaceCwd);
       Future.delayed(const Duration(milliseconds: 300), () {
         state.setSessionConfig(model: _selectedModel, effort: _selectedEffort);
       });
@@ -106,27 +108,30 @@ class _SessionScreenState extends State<SessionScreen> {
                   ),
                 ),
               const SizedBox(width: 4),
-              // Tool branding + session tabs
+              // Tool branding + workspace + session tabs
               Expanded(
                 child: SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: Row(
                     children: [
                       if (state.sessions.isEmpty)
-                        Row(
-                          children: [
-                            Container(
-                              width: 20, height: 20,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(5),
-                                color: AppColors.accentBg,
+                        GestureDetector(
+                          onTap: widget.onChangeWorkspace,
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 20, height: 20,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(5),
+                                  color: AppColors.accentBg,
+                                ),
+                                child: const Icon(Icons.terminal_rounded, size: 11, color: AppColors.accent),
                               ),
-                              child: const Icon(Icons.terminal_rounded, size: 11, color: AppColors.accent),
-                            ),
-                            const SizedBox(width: 8),
-                            Text('Claude Code',
-                              style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.text)),
-                          ],
+                              const SizedBox(width: 8),
+                              Text(widget.workspaceName ?? 'Claude Code',
+                                style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.text)),
+                            ],
+                          ),
                         )
                       else
                         ...state.sessions.map((s) => Padding(
@@ -424,7 +429,7 @@ class _SessionScreenState extends State<SessionScreen> {
             GestureDetector(
               onTap: () {
                 HapticFeedback.lightImpact();
-                state.createSession('claude');
+                state.createSession('claude', cwd: state.workspaceCwd);
                 Future.delayed(const Duration(milliseconds: 300), () {
                   state.setSessionConfig(model: _selectedModel, effort: _selectedEffort);
                 });

@@ -71,6 +71,11 @@ class DevBoxConnection extends ChangeNotifier {
             if (msg['type'] == 'paired' && msg['success'] == true) {
               _setStatus(ConnectionStatus.paired);
             }
+            if (msg['type'] == 'paired' && msg['success'] != true) {
+              // Secret changed (daemon restarted) — auto-fetch new secret
+              _autoRepair();
+              return;
+            }
             if (msg['type'] == 'status') {
               _hostname = msg['hostname'] ?? '';
               notifyListeners();
@@ -113,6 +118,24 @@ class DevBoxConnection extends ChangeNotifier {
     if (_status != s) {
       _status = s;
       notifyListeners();
+    }
+  }
+
+  /// When pairing fails (daemon restarted with new secret), fetch the new
+  /// secret from the dashboard API and re-pair automatically.
+  Future<void> _autoRepair() async {
+    try {
+      final resp = await http.get(Uri.parse('http://$_host:7778/api/info'))
+          .timeout(const Duration(seconds: 3));
+      final info = jsonDecode(resp.body);
+      final newSecret = info['secret'] as String?;
+      if (newSecret != null && newSecret.isNotEmpty) {
+        _secret = newSecret;
+        send({'type': 'pair:verify', 'token': _secret});
+      }
+    } catch (_) {
+      // Dashboard not reachable — try reconnecting later
+      _scheduleReconnect();
     }
   }
 

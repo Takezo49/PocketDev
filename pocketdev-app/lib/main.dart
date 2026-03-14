@@ -4,10 +4,12 @@ import 'package:provider/provider.dart';
 import 'services/auth_service.dart';
 import 'services/connection.dart';
 import 'services/session_state.dart';
+import 'services/workspace_state.dart';
 import 'screens/auth_screen.dart';
 import 'screens/connect_screen.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/session_screen.dart';
+import 'screens/workspace_picker_screen.dart';
 import 'theme/colors.dart';
 
 /// Check for ?preview= param on web for design iteration
@@ -45,7 +47,7 @@ class DevBoxApp extends StatelessWidget {
 /// Not logged in → AuthScreen
 /// Logged in, no device → ConnectScreen
 /// Logged in + device → DashboardScreen (tool picker)
-/// Select tool → SessionScreen
+/// Select tool → Workspace Picker (or fast path) → SessionScreen
 class AppRouter extends StatefulWidget {
   const AppRouter({super.key});
 
@@ -54,7 +56,10 @@ class AppRouter extends StatefulWidget {
 }
 
 class _AppRouterState extends State<AppRouter> {
-  String? _activeTool; // null = show dashboard, 'claude' = show session
+  String? _activeTool;
+  String? _selectedWorkspace;
+  String? _selectedWorkspaceName;
+  bool _showWorkspacePicker = false;
   bool _autoConnected = false;
 
   void _tryAutoConnect() {
@@ -70,6 +75,14 @@ class _AppRouterState extends State<AppRouter> {
       }
       _autoConnected = true;
     }
+  }
+
+  /// Select a tool — always show workspace picker
+  void _selectTool(String toolId) {
+    setState(() {
+      _activeTool = toolId;
+      _showWorkspacePicker = true;
+    });
   }
 
   @override
@@ -109,33 +122,87 @@ class _AppRouterState extends State<AppRouter> {
     // Auto-connect on startup
     _tryAutoConnect();
 
-    // Tool selected → show session screen
+    // Tool selected — decide workspace or session
     if (_activeTool != null) {
-      return Scaffold(
-        backgroundColor: AppColors.bg,
-        body: SafeArea(
-          child: ChangeNotifierProxyProvider<DevBoxConnection, SessionState>(
-            create: (ctx) => SessionState(ctx.read<DevBoxConnection>()),
-            update: (_, conn, prev) => prev ?? SessionState(conn),
-            child: SessionScreen(
-              onNeedsPairing: () {
-                auth.unpairDevice();
-                setState(() { _activeTool = null; _autoConnected = false; });
+      // Workspace selected → show session
+      if (_selectedWorkspace != null) {
+        return Scaffold(
+          backgroundColor: AppColors.bg,
+          body: SafeArea(
+            child: ChangeNotifierProxyProvider<DevBoxConnection, SessionState>(
+              create: (ctx) {
+                final state = SessionState(ctx.read<DevBoxConnection>());
+                state.workspaceCwd = _selectedWorkspace;
+                return state;
               },
-              onBack: () => setState(() => _activeTool = null),
+              update: (_, conn, prev) => prev ?? SessionState(conn),
+              child: SessionScreen(
+                workspaceName: _selectedWorkspaceName,
+                onNeedsPairing: () {
+                  auth.unpairDevice();
+                  setState(() {
+                    _activeTool = null;
+                    _selectedWorkspace = null;
+                    _selectedWorkspaceName = null;
+                    _showWorkspacePicker = false;
+                    _autoConnected = false;
+                  });
+                },
+                onBack: () => setState(() {
+                  _activeTool = null;
+                  _selectedWorkspace = null;
+                  _selectedWorkspaceName = null;
+                  _showWorkspacePicker = false;
+                }),
+                onChangeWorkspace: () => setState(() {
+                  _selectedWorkspace = null;
+                  _selectedWorkspaceName = null;
+                  _showWorkspacePicker = true;
+                }),
+              ),
             ),
           ),
+        );
+      }
+
+      // Show workspace picker
+      return ChangeNotifierProxyProvider<DevBoxConnection, WorkspaceState>(
+        create: (ctx) => WorkspaceState(ctx.read<DevBoxConnection>()),
+        update: (_, conn, prev) => prev ?? WorkspaceState(conn),
+        child: WorkspacePickerScreen(
+          onSelectWorkspace: (path, name) {
+            setState(() {
+              _selectedWorkspace = path;
+              _selectedWorkspaceName = name;
+              _showWorkspacePicker = false;
+            });
+          },
+          onBack: () => setState(() {
+            _activeTool = null;
+            _showWorkspacePicker = false;
+          }),
         ),
       );
     }
 
     // Dashboard: pick an AI tool
-    return DashboardScreen(
-      onSelectTool: (toolId) => setState(() => _activeTool = toolId),
-      onDisconnect: () {
-        auth.unpairDevice();
-        setState(() { _autoConnected = false; });
-      },
+    return ChangeNotifierProxyProvider<DevBoxConnection, WorkspaceState>(
+      create: (ctx) => WorkspaceState(ctx.read<DevBoxConnection>()),
+      update: (_, conn, prev) => prev ?? WorkspaceState(conn),
+      child: DashboardScreen(
+        onSelectTool: _selectTool,
+        onSelectToolWithWorkspace: (toolId, path, name) {
+          setState(() {
+            _activeTool = toolId;
+            _selectedWorkspace = path;
+            _selectedWorkspaceName = name;
+          });
+        },
+        onDisconnect: () {
+          auth.unpairDevice();
+          setState(() { _autoConnected = false; });
+        },
+      ),
     );
   }
 
@@ -143,18 +210,33 @@ class _AppRouterState extends State<AppRouter> {
   Widget _previewScreen(String screen) {
     switch (screen) {
       case 'dashboard':
-        // Mock as paired for full visual
         WidgetsBinding.instance.addPostFrameCallback((_) {
           context.read<DevBoxConnection>().mockStatus(ConnectionStatus.paired);
         });
-        return DashboardScreen(
-          onSelectTool: (_) {},
-          onDisconnect: () {},
+        return ChangeNotifierProxyProvider<DevBoxConnection, WorkspaceState>(
+          create: (ctx) => WorkspaceState(ctx.read<DevBoxConnection>()),
+          update: (_, conn, prev) => prev ?? WorkspaceState(conn),
+          child: DashboardScreen(
+            onSelectTool: (_) {},
+            onSelectToolWithWorkspace: (a, b, c) {},
+            onDisconnect: () {},
+          ),
         );
       case 'connect':
         return ConnectScreen(onConnected: () {});
+      case 'workspace':
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          context.read<DevBoxConnection>().mockStatus(ConnectionStatus.paired);
+        });
+        return ChangeNotifierProxyProvider<DevBoxConnection, WorkspaceState>(
+          create: (ctx) => WorkspaceState(ctx.read<DevBoxConnection>()),
+          update: (_, conn, prev) => prev ?? WorkspaceState(conn),
+          child: WorkspacePickerScreen(
+            onSelectWorkspace: (a, b) {},
+            onBack: () {},
+          ),
+        );
       case 'session':
-        // Mock as paired so we see the full empty state
         WidgetsBinding.instance.addPostFrameCallback((_) {
           context.read<DevBoxConnection>().mockStatus(ConnectionStatus.paired);
         });

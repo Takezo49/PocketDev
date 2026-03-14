@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
 import '../services/connection.dart';
+import '../services/workspace_state.dart';
 import '../theme/colors.dart';
 
 class AiTool {
@@ -25,9 +26,15 @@ const _tools = [
 
 class DashboardScreen extends StatelessWidget {
   final void Function(String toolId) onSelectTool;
+  final void Function(String toolId, String path, String name) onSelectToolWithWorkspace;
   final VoidCallback onDisconnect;
 
-  const DashboardScreen({super.key, required this.onSelectTool, required this.onDisconnect});
+  const DashboardScreen({
+    super.key,
+    required this.onSelectTool,
+    required this.onSelectToolWithWorkspace,
+    required this.onDisconnect,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -196,6 +203,9 @@ class DashboardScreen extends StatelessWidget {
                       final tool = _tools[i];
                       final canOpen = !tool.comingSoon && isOnline;
                       final isActive = !tool.comingSoon;
+                      final ws = context.watch<WorkspaceState>();
+                      final lastPath = ws.getLastWorkspacePath(tool.id);
+                      final lastName = ws.getLastWorkspaceName(tool.id);
 
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 8),
@@ -203,9 +213,15 @@ class DashboardScreen extends StatelessWidget {
                           tool: tool,
                           canOpen: canOpen,
                           isActive: isActive,
+                          lastWorkspaceName: lastName,
                           onTap: canOpen ? () {
                             HapticFeedback.mediumImpact();
+                            // Always show workspace picker
                             onSelectTool(tool.id);
+                          } : null,
+                          onFastPath: (canOpen && lastPath != null && lastName != null) ? () {
+                            HapticFeedback.mediumImpact();
+                            onSelectToolWithWorkspace(tool.id, lastPath!, lastName!);
                           } : null,
                         ),
                       );
@@ -338,9 +354,18 @@ class _ToolCard extends StatefulWidget {
   final AiTool tool;
   final bool canOpen;
   final bool isActive;
+  final String? lastWorkspaceName;
   final VoidCallback? onTap;
+  final VoidCallback? onFastPath;
 
-  const _ToolCard({required this.tool, required this.canOpen, required this.isActive, this.onTap});
+  const _ToolCard({
+    required this.tool,
+    required this.canOpen,
+    required this.isActive,
+    this.lastWorkspaceName,
+    this.onTap,
+    this.onFastPath,
+  });
 
   @override
   State<_ToolCard> createState() => _ToolCardState();
@@ -403,6 +428,25 @@ class _ToolCardState extends State<_ToolCard> {
                     Text(widget.tool.subtitle,
                       style: GoogleFonts.inter(fontSize: 12,
                         color: active ? AppColors.textSecondary : AppColors.textFaint)),
+                    if (widget.lastWorkspaceName != null && active) ...[
+                      const SizedBox(height: 4),
+                      GestureDetector(
+                        onTap: widget.onFastPath != null ? () {
+                          // Stop the card tap from firing
+                          widget.onFastPath!();
+                        } : null,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(4),
+                            color: AppColors.accentBg,
+                          ),
+                          child: Text(widget.lastWorkspaceName!,
+                            style: GoogleFonts.jetBrainsMono(fontSize: 10,
+                              color: AppColors.accent.withValues(alpha: 0.7))),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
