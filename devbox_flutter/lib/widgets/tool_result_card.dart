@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../services/session_state.dart';
 import '../theme/colors.dart';
 
@@ -31,7 +32,6 @@ class _ToolResultCardState extends State<ToolResultCard> {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: AppColors.surface,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: AppColors.border),
       ),
@@ -48,13 +48,13 @@ class _ToolResultCardState extends State<ToolResultCard> {
                   Expanded(
                     child: Text(
                       widget.card.toolName,
-                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
+                      style: GoogleFonts.jetBrainsMono(fontSize: 11, fontWeight: FontWeight.w500, color: AppColors.textSecondary),
                     ),
                   ),
                   if (hasContent) ...[
-                    Text('$lineCount lines', style: const TextStyle(fontSize: 11, color: AppColors.textMuted)),
+                    Text('$lineCount lines', style: GoogleFonts.jetBrainsMono(fontSize: 10, color: AppColors.textTertiary)),
                     const SizedBox(width: 4),
-                    Icon(_expanded ? Icons.expand_less : Icons.expand_more, size: 16, color: AppColors.textMuted),
+                    Icon(_expanded ? Icons.expand_less : Icons.expand_more, size: 14, color: AppColors.textTertiary),
                   ],
                 ],
               ),
@@ -69,7 +69,7 @@ class _ToolResultCardState extends State<ToolResultCard> {
                 preview,
                 maxLines: 3,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 10, fontFamily: 'monospace', color: AppColors.textMuted, height: 1.3),
+                style: GoogleFonts.jetBrainsMono(fontSize: 10, color: AppColors.textTertiary, height: 1.3),
               ),
             ),
 
@@ -102,7 +102,7 @@ class _ToolResultCardState extends State<ToolResultCard> {
                   HapticFeedback.lightImpact();
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: const Text('Copied', style: TextStyle(color: AppColors.text)),
+                      content: Text('Copied', style: GoogleFonts.inter(color: AppColors.text, fontSize: 12)),
                       backgroundColor: AppColors.surfaceLight,
                       duration: const Duration(seconds: 1),
                       behavior: SnackBarBehavior.floating,
@@ -110,7 +110,7 @@ class _ToolResultCardState extends State<ToolResultCard> {
                     ),
                   );
                 },
-                child: const Text('Copy', style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
+                child: Text('Copy', style: GoogleFonts.inter(fontSize: 11, color: AppColors.textTertiary)),
               ),
             ),
           ],
@@ -119,7 +119,6 @@ class _ToolResultCardState extends State<ToolResultCard> {
     );
   }
 
-  /// Render content with diff coloring, line numbers, and horizontal scroll.
   Widget _diffContent(String content) {
     final lines = content.split('\n');
     int lineNum = 0;
@@ -128,7 +127,6 @@ class _ToolResultCardState extends State<ToolResultCard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: lines.map((line) {
-          // Header lines don't get line numbers
           final isHeader = line.startsWith('---') || line.startsWith('+++');
           if (!isHeader) lineNum++;
 
@@ -138,12 +136,12 @@ class _ToolResultCardState extends State<ToolResultCard> {
             color = AppColors.textSecondary;
           } else if (line.startsWith('+')) {
             color = AppColors.green;
-            bgColor = AppColors.green.withValues(alpha: 0.08);
+            bgColor = AppColors.green.withValues(alpha: 0.06);
           } else if (line.startsWith('-')) {
             color = AppColors.red;
-            bgColor = AppColors.red.withValues(alpha: 0.08);
+            bgColor = AppColors.red.withValues(alpha: 0.06);
           } else {
-            color = AppColors.textMuted;
+            color = AppColors.textTertiary;
           }
 
           final numStr = isHeader ? '   ' : '${lineNum}'.padLeft(3);
@@ -156,20 +154,12 @@ class _ToolResultCardState extends State<ToolResultCard> {
               children: [
                 SizedBox(
                   width: 28,
-                  child: Text(
-                    numStr,
-                    style: TextStyle(
-                      fontSize: 9,
-                      fontFamily: 'monospace',
-                      color: AppColors.textMuted.withValues(alpha: 0.5),
-                      height: 1.4,
-                    ),
-                  ),
+                  child: Text(numStr,
+                    style: GoogleFonts.jetBrainsMono(fontSize: 9, color: AppColors.textFaint, height: 1.4)),
                 ),
                 const SizedBox(width: 4),
-                Text(
-                  line,
-                  style: TextStyle(fontSize: 10, fontFamily: 'monospace', color: color, height: 1.4),
+                Text(line,
+                  style: GoogleFonts.jetBrainsMono(fontSize: 10, color: color, height: 1.4),
                   softWrap: false,
                 ),
               ],
@@ -180,7 +170,6 @@ class _ToolResultCardState extends State<ToolResultCard> {
     );
   }
 
-  /// Plain monospace content with line numbers and horizontal scroll.
   Widget _plainContent(String content) {
     final lines = content.split('\n');
 
@@ -196,20 +185,12 @@ class _ToolResultCardState extends State<ToolResultCard> {
               children: [
                 SizedBox(
                   width: 28,
-                  child: Text(
-                    numStr,
-                    style: TextStyle(
-                      fontSize: 9,
-                      fontFamily: 'monospace',
-                      color: AppColors.textMuted.withValues(alpha: 0.5),
-                      height: 1.4,
-                    ),
-                  ),
+                  child: Text(numStr,
+                    style: GoogleFonts.jetBrainsMono(fontSize: 9, color: AppColors.textFaint, height: 1.4)),
                 ),
                 const SizedBox(width: 4),
-                Text(
-                  lines[i],
-                  style: const TextStyle(fontSize: 10, fontFamily: 'monospace', color: AppColors.text, height: 1.4),
+                Text(lines[i],
+                  style: GoogleFonts.jetBrainsMono(fontSize: 10, color: AppColors.text, height: 1.4),
                   softWrap: false,
                 ),
               ],

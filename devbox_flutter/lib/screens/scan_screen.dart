@@ -133,7 +133,7 @@ class _ScanScreenState extends State<ScanScreen> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                 ),
                 child: const Text('Connect',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white)),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.bg)),
               ),
             ),
             const SizedBox(height: 16),

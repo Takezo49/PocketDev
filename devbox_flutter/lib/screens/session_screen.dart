@@ -1,7 +1,6 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_animate/flutter_animate.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../services/connection.dart';
 import '../services/session_state.dart';
@@ -90,40 +89,9 @@ class _SessionScreenState extends State<SessionScreen> {
 
     return Column(
       children: [
-        // Connection banner
-        if (!paired)
-          GestureDetector(
-            onTap: widget.onNeedsPairing,
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 10),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    width: 6,
-                    height: 6,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: conn.status == ConnectionStatus.connecting
-                          ? AppColors.textMuted
-                          : AppColors.red,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    conn.status == ConnectionStatus.connecting
-                        ? 'Connecting...'
-                        : 'Not connected',
-                    style: const TextStyle(fontSize: 13, color: AppColors.textMuted),
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-        // Top bar: back + sessions + settings
+        // Top bar
         Container(
-          padding: const EdgeInsets.fromLTRB(4, 8, 8, 8),
+          padding: const EdgeInsets.fromLTRB(8, 10, 8, 10),
           decoration: const BoxDecoration(
             border: Border(bottom: BorderSide(color: AppColors.border, width: 0.5)),
           ),
@@ -133,43 +101,89 @@ class _SessionScreenState extends State<SessionScreen> {
                 GestureDetector(
                   onTap: widget.onBack,
                   child: const Padding(
-                    padding: EdgeInsets.all(8),
-                    child: Icon(Icons.arrow_back_rounded, size: 20, color: AppColors.textSecondary),
+                    padding: EdgeInsets.all(6),
+                    child: Icon(Icons.arrow_back_rounded, size: 18, color: AppColors.textTertiary),
                   ),
                 ),
+              const SizedBox(width: 4),
+              // Tool branding + session tabs
               Expanded(
                 child: SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: Row(
                     children: [
-                      ...state.sessions.map((s) => Padding(
-                            padding: const EdgeInsets.only(right: 8),
-                            child: GestureDetector(
-                              onTap: () => state.setActiveSession(s.id),
-                              child: Text(
-                                s.tool,
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: s.id == state.activeSessionId ? FontWeight.w600 : FontWeight.w400,
-                                  color: s.id == state.activeSessionId ? AppColors.text : AppColors.textMuted,
+                      if (state.sessions.isEmpty)
+                        Row(
+                          children: [
+                            Container(
+                              width: 20, height: 20,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(5),
+                                color: AppColors.accentBg,
+                              ),
+                              child: const Icon(Icons.terminal_rounded, size: 11, color: AppColors.accent),
+                            ),
+                            const SizedBox(width: 8),
+                            Text('Claude Code',
+                              style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.text)),
+                          ],
+                        )
+                      else
+                        ...state.sessions.map((s) => Padding(
+                              padding: const EdgeInsets.only(right: 12),
+                              child: GestureDetector(
+                                onTap: () => state.setActiveSession(s.id),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(6),
+                                    color: s.id == state.activeSessionId ? AppColors.surfaceLight : Colors.transparent,
+                                    border: s.id == state.activeSessionId
+                                        ? Border.all(color: AppColors.border)
+                                        : null,
+                                  ),
+                                  child: Text(
+                                    s.tool,
+                                    style: GoogleFonts.inter(
+                                      fontSize: 13,
+                                      fontWeight: s.id == state.activeSessionId ? FontWeight.w500 : FontWeight.w400,
+                                      color: s.id == state.activeSessionId ? AppColors.text : AppColors.textTertiary,
+                                    ),
+                                  ),
                                 ),
                               ),
-                            ),
-                          )),
+                            )),
                       GestureDetector(
                         onTap: paired ? () => state.createSession('claude') : null,
-                        child: Text('+',
-                            style: TextStyle(fontSize: 18, color: paired ? AppColors.text : AppColors.textMuted)),
+                        child: Container(
+                          width: 22, height: 22,
+                          margin: const EdgeInsets.symmetric(horizontal: 2),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: paired ? AppColors.border : AppColors.borderSubtle, width: 0.5),
+                          ),
+                          child: Icon(Icons.add_rounded, size: 13,
+                            color: paired ? AppColors.textTertiary : AppColors.textFaint),
+                        ),
                       ),
                     ],
                   ),
                 ),
               ),
+              // Connection dot
+              Container(
+                width: 6, height: 6,
+                margin: const EdgeInsets.only(right: 8),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: paired ? AppColors.accent : (conn.status == ConnectionStatus.connecting ? AppColors.textTertiary : AppColors.red),
+                ),
+              ),
               GestureDetector(
                 onTap: paired ? () => showModelPicker(context, state) : null,
                 child: Padding(
-                  padding: const EdgeInsets.all(8),
-                  child: Icon(Icons.tune_rounded, size: 20, color: paired ? AppColors.textSecondary : AppColors.textMuted),
+                  padding: const EdgeInsets.all(6),
+                  child: Icon(Icons.tune_rounded, size: 18, color: paired ? AppColors.textTertiary : AppColors.textFaint),
                 ),
               ),
             ],
@@ -216,24 +230,24 @@ class _SessionScreenState extends State<SessionScreen> {
                     enabled: paired,
                     maxLines: 4,
                     minLines: 1,
-                    style: const TextStyle(fontSize: 15, color: AppColors.text),
+                    style: GoogleFonts.inter(fontSize: 14, color: AppColors.text),
                     decoration: InputDecoration(
-                      hintText: 'Message',
-                      hintStyle: const TextStyle(color: AppColors.textMuted),
+                      hintText: paired ? 'What do you want to build?' : 'Not connected',
+                      hintStyle: GoogleFonts.inter(fontSize: 14, color: AppColors.textTertiary),
                       filled: true,
                       fillColor: AppColors.surface,
                       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(20),
-                        borderSide: BorderSide(color: AppColors.border),
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: const BorderSide(color: AppColors.border, width: 0.5),
                       ),
                       enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(20),
-                        borderSide: BorderSide(color: AppColors.border),
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: const BorderSide(color: AppColors.border, width: 0.5),
                       ),
                       focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(20),
-                        borderSide: BorderSide(color: AppColors.textMuted),
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide(color: AppColors.accent.withValues(alpha: 0.3), width: 0.5),
                       ),
                     ),
                     onSubmitted: (_) => _handleSend(),
@@ -244,26 +258,26 @@ class _SessionScreenState extends State<SessionScreen> {
                     ? GestureDetector(
                         onTap: _handleCancel,
                         child: Container(
-                          width: 40,
-                          height: 40,
+                          width: 38,
+                          height: 38,
                           decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(color: AppColors.border),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: AppColors.red.withValues(alpha: 0.3)),
                           ),
-                          child: const Icon(Icons.stop_rounded, color: AppColors.text, size: 20),
+                          child: const Icon(Icons.stop_rounded, color: AppColors.red, size: 18),
                         ),
                       )
                     : GestureDetector(
                         onTap: paired ? _handleSend : null,
                         child: Container(
-                          width: 40,
-                          height: 40,
+                          width: 38,
+                          height: 38,
                           decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: paired ? AppColors.text : AppColors.surfaceLight,
+                            borderRadius: BorderRadius.circular(10),
+                            color: paired ? AppColors.accent : AppColors.surfaceLight,
                           ),
                           child: Icon(Icons.arrow_upward_rounded,
-                              color: paired ? AppColors.bg : AppColors.textMuted, size: 20),
+                              color: paired ? AppColors.bg : AppColors.textFaint, size: 18),
                         ),
                       ),
               ],
@@ -283,80 +297,152 @@ class _SessionScreenState extends State<SessionScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                width: 52, height: 52,
+                width: 48, height: 48,
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(14),
-                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: AppColors.border),
                 ),
-                child: const Icon(Icons.link_off_rounded, size: 24, color: AppColors.textMuted),
+                child: const Icon(Icons.link_off_rounded, size: 20, color: AppColors.textTertiary),
               ),
               const SizedBox(height: 14),
-              const Text('Not connected', style: TextStyle(fontSize: 15, color: AppColors.textMuted)),
+              Text('Not connected', style: GoogleFonts.inter(fontSize: 14, color: AppColors.textTertiary)),
               const SizedBox(height: 4),
-              const Text('Tap to reconnect', style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
+              Text('Tap to reconnect', style: GoogleFonts.inter(fontSize: 11, color: AppColors.textFaint)),
             ],
           ),
         ),
       );
     }
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-      child: Column(
-        children: [
-          const SizedBox(height: 24),
-          const Text('Claude Code', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: AppColors.text, letterSpacing: -0.5)),
-          const SizedBox(height: 6),
-          const Text('What do you want to build?', style: TextStyle(fontSize: 14, color: AppColors.textMuted)),
+    return DotGridBackground(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+        child: Column(
+          children: [
+            const SizedBox(height: 12),
 
-          const SizedBox(height: 40),
+            // Terminal icon with glow
+            Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(14),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.accent.withValues(alpha: 0.12),
+                    blurRadius: 20,
+                    spreadRadius: 0,
+                  ),
+                ],
+              ),
+              child: Container(
+                width: 48, height: 48,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(14),
+                  color: AppColors.accentBg,
+                  border: Border.all(color: AppColors.accent.withValues(alpha: 0.15)),
+                ),
+                child: const Icon(Icons.terminal_rounded, size: 24, color: AppColors.accent),
+              ),
+            ),
 
-          // Model
-          const Align(
-            alignment: Alignment.centerLeft,
-            child: Text('MODEL', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textMuted, letterSpacing: 1)),
-          ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              _chip('Opus', 'opus', _selectedModel == 'opus'),
-              const SizedBox(width: 8),
-              _chip('Sonnet', 'sonnet', _selectedModel == 'sonnet'),
-              const SizedBox(width: 8),
-              _chip('Haiku', 'haiku', _selectedModel == 'haiku'),
-            ],
-          ).animate().fadeIn(delay: 100.ms, duration: 200.ms),
+            const SizedBox(height: 20),
 
-          const SizedBox(height: 24),
+            Text('New Session',
+              style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w300, color: AppColors.text, letterSpacing: -0.5)),
+            const SizedBox(height: 6),
+            Text('Configure and start coding',
+              style: GoogleFonts.inter(fontSize: 13, color: AppColors.textTertiary)),
 
-          // Effort
-          const Align(
-            alignment: Alignment.centerLeft,
-            child: Text('EFFORT', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textMuted, letterSpacing: 1)),
-          ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              _chip('Low', 'low', _selectedEffort == 'low', isEffort: true),
-              const SizedBox(width: 8),
-              _chip('Medium', 'medium', _selectedEffort == 'medium', isEffort: true),
-              const SizedBox(width: 8),
-              _chip('High', 'high', _selectedEffort == 'high', isEffort: true),
-            ],
-          ).animate().fadeIn(delay: 200.ms, duration: 200.ms),
+            const SizedBox(height: 28),
 
-          const SizedBox(height: 40),
+            CustomPaint(
+              size: const Size(double.infinity, 1),
+              painter: DashedLinePainter(color: AppColors.border),
+            ),
 
-          // Quick actions
-          _action('New session', () {
-            HapticFeedback.lightImpact();
-            state.createSession('claude');
-            Future.delayed(const Duration(milliseconds: 300), () {
-              state.setSessionConfig(model: _selectedModel, effort: _selectedEffort);
-            });
-          }),
-        ].animate(interval: 30.ms).fadeIn(duration: 150.ms),
+            const SizedBox(height: 24),
+
+            // Model
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text('MODEL', style: GoogleFonts.jetBrainsMono(
+                fontSize: 10, fontWeight: FontWeight.w600, color: AppColors.textTertiary, letterSpacing: 2)),
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                _chip('Opus', 'opus', _selectedModel == 'opus'),
+                const SizedBox(width: 8),
+                _chip('Sonnet', 'sonnet', _selectedModel == 'sonnet'),
+                const SizedBox(width: 8),
+                _chip('Haiku', 'haiku', _selectedModel == 'haiku'),
+              ],
+            ),
+
+            const SizedBox(height: 24),
+
+            // Effort
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text('EFFORT', style: GoogleFonts.jetBrainsMono(
+                fontSize: 10, fontWeight: FontWeight.w600, color: AppColors.textTertiary, letterSpacing: 2)),
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                _chip('Low', 'low', _selectedEffort == 'low', isEffort: true),
+                const SizedBox(width: 8),
+                _chip('Medium', 'medium', _selectedEffort == 'medium', isEffort: true),
+                const SizedBox(width: 8),
+                _chip('High', 'high', _selectedEffort == 'high', isEffort: true),
+              ],
+            ),
+
+            const SizedBox(height: 28),
+
+            CustomPaint(
+              size: const Size(double.infinity, 1),
+              painter: DashedLinePainter(color: AppColors.border),
+            ),
+
+            const SizedBox(height: 20),
+
+            // Config summary
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(_selectedModel[0].toUpperCase() + _selectedModel.substring(1),
+                  style: GoogleFonts.jetBrainsMono(fontSize: 11, fontWeight: FontWeight.w500, color: AppColors.accent)),
+                Text('  ·  ', style: GoogleFonts.inter(color: AppColors.textFaint)),
+                Text('${_selectedEffort[0].toUpperCase()}${_selectedEffort.substring(1)} effort',
+                  style: GoogleFonts.jetBrainsMono(fontSize: 11, color: AppColors.textTertiary)),
+              ],
+            ),
+
+            const SizedBox(height: 20),
+
+            // Start session
+            GestureDetector(
+              onTap: () {
+                HapticFeedback.lightImpact();
+                state.createSession('claude');
+                Future.delayed(const Duration(milliseconds: 300), () {
+                  state.setSessionConfig(model: _selectedModel, effort: _selectedEffort);
+                });
+              },
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                decoration: BoxDecoration(
+                  color: AppColors.text,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Center(
+                  child: Text('Start session', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.bg)),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -383,39 +469,25 @@ class _SessionScreenState extends State<SessionScreen> {
           }
         },
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 12),
+          padding: const EdgeInsets.symmetric(vertical: 11),
           decoration: BoxDecoration(
             color: selected ? AppColors.text : Colors.transparent,
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: selected ? AppColors.text : AppColors.border),
+            border: Border.all(
+              color: selected ? AppColors.text : AppColors.border,
+              width: selected ? 1 : 0.5,
+            ),
           ),
           child: Center(
             child: Text(
               label,
-              style: TextStyle(
-                fontSize: 14,
+              style: GoogleFonts.jetBrainsMono(
+                fontSize: 12,
                 fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-                color: selected ? AppColors.bg : AppColors.textSecondary,
+                color: selected ? AppColors.bg : AppColors.textMuted,
               ),
             ),
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _action(String label, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 14),
-        decoration: BoxDecoration(
-          color: AppColors.text,
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Center(
-          child: Text(label, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.bg)),
         ),
       ),
     );

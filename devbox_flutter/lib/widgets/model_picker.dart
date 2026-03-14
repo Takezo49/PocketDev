@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../services/session_state.dart';
 import '../theme/colors.dart';
 
@@ -60,13 +61,17 @@ class _ModelPickerSheetState extends State<_ModelPickerSheet> {
       decoration: const BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        border: Border(
+          top: BorderSide(color: AppColors.border),
+          left: BorderSide(color: AppColors.border),
+          right: BorderSide(color: AppColors.border),
+        ),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: 32,
-            height: 4,
+            width: 32, height: 3,
             margin: const EdgeInsets.only(top: 12),
             decoration: BoxDecoration(
               color: AppColors.border,
@@ -74,11 +79,12 @@ class _ModelPickerSheetState extends State<_ModelPickerSheet> {
             ),
           ),
 
-          const Padding(
-            padding: EdgeInsets.fromLTRB(20, 24, 20, 12),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
             child: Align(
               alignment: Alignment.centerLeft,
-              child: Text('Model', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.text)),
+              child: Text('MODEL', style: GoogleFonts.jetBrainsMono(
+                fontSize: 10, fontWeight: FontWeight.w600, color: AppColors.textTertiary, letterSpacing: 2)),
             ),
           ),
 
@@ -92,11 +98,12 @@ class _ModelPickerSheetState extends State<_ModelPickerSheet> {
             });
           }),
 
-          const Padding(
-            padding: EdgeInsets.fromLTRB(20, 20, 20, 12),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
             child: Align(
               alignment: Alignment.centerLeft,
-              child: Text('Effort', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.text)),
+              child: Text('EFFORT', style: GoogleFonts.jetBrainsMono(
+                fontSize: 10, fontWeight: FontWeight.w600, color: AppColors.textTertiary, letterSpacing: 2)),
             ),
           ),
 
@@ -121,20 +128,22 @@ class _ModelPickerSheetState extends State<_ModelPickerSheet> {
       onTap: onTap,
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
         decoration: BoxDecoration(
           color: selected ? AppColors.surfaceLight : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
+          border: selected ? Border.all(color: AppColors.border) : null,
         ),
         child: Row(
           children: [
-            Text(name, style: TextStyle(
-              fontSize: 15,
-              color: selected ? AppColors.text : AppColors.textSecondary,
+            Text(name, style: GoogleFonts.inter(
+              fontSize: 14,
+              fontWeight: selected ? FontWeight.w500 : FontWeight.w400,
+              color: selected ? AppColors.text : AppColors.textTertiary,
             )),
             const Spacer(),
             if (selected)
-              const Icon(Icons.check, size: 18, color: AppColors.text),
+              const Icon(Icons.check, size: 16, color: AppColors.accent),
           ],
         ),
       ),

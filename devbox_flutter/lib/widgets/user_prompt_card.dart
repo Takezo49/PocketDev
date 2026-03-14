@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../services/session_state.dart';
 import '../theme/colors.dart';
 
@@ -19,15 +20,15 @@ class UserPromptCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppColors.surfaceLight,
           borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(16),
-            topRight: Radius.circular(16),
-            bottomLeft: Radius.circular(16),
+            topLeft: Radius.circular(14),
+            topRight: Radius.circular(14),
+            bottomLeft: Radius.circular(14),
             bottomRight: Radius.circular(4),
           ),
         ),
         child: SelectableText(
           card.text,
-          style: const TextStyle(fontSize: 15, color: AppColors.text, height: 1.5),
+          style: GoogleFonts.inter(fontSize: 14, color: AppColors.text, height: 1.5),
         ),
       ),
     );

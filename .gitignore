@@ -2,6 +2,7 @@ node_modules/
 dist/
 build/
 .dart_tool/
+.dart_tool
 .flutter-plugins
 .flutter-plugins-dependencies
 *.apk
@@ -13,3 +14,10 @@ local.properties
 *.log
 /tmp/
 .npm/
+devbox_flutter/build/
+devbox_flutter/.dart_tool/
+pubspec.lock
+
+# Separate repos — have their own git history
+ruflo/
+devbox/packages/mobile/

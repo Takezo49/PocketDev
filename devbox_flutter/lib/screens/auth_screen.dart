@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_animate/flutter_animate.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
 import '../theme/colors.dart';
 
 class AuthScreen extends StatefulWidget {
   final VoidCallback onAuth;
-  const AuthScreen({super.key, required this.onAuth});
+  final VoidCallback? onSkip;
+  const AuthScreen({super.key, required this.onAuth, this.onSkip});
 
   @override
   State<AuthScreen> createState() => _AuthScreenState();
@@ -22,7 +23,6 @@ class _AuthScreenState extends State<AuthScreen> {
   final _passCtrl = TextEditingController();
   final _nameCtrl = TextEditingController();
   late final TextEditingController _serverCtrl;
-  bool _pressed = false;
 
   @override
   void initState() {
@@ -75,140 +75,180 @@ class _AuthScreenState extends State<AuthScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.bg,
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 28),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Logo
-                Container(
-                  width: 64, height: 64,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(16),
-                    color: AppColors.surface,
-                    border: Border.all(color: AppColors.border),
-                  ),
-                  child: const Icon(Icons.developer_mode_rounded, size: 30, color: AppColors.text),
-                ).animate().fadeIn(duration: 400.ms).scale(begin: const Offset(0.8, 0.8), end: const Offset(1, 1), duration: 400.ms, curve: Curves.easeOut),
-
-                const SizedBox(height: 20),
-
-                const Text('DevBox',
-                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800, color: AppColors.text, letterSpacing: -0.5),
-                ).animate().fadeIn(delay: 100.ms, duration: 400.ms),
-
-                const SizedBox(height: 6),
-
-                Text(_isLogin ? 'Welcome back' : 'Create your account',
-                  style: const TextStyle(fontSize: 14, color: AppColors.textMuted),
-                ).animate().fadeIn(delay: 150.ms, duration: 400.ms),
-
-                const SizedBox(height: 36),
-
-                // Server URL (collapsible)
-                GestureDetector(
-                  onTap: () => setState(() => _showServer = !_showServer),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(_showServer ? Icons.expand_less : Icons.expand_more, size: 14, color: AppColors.textMuted),
-                      const SizedBox(width: 4),
-                      const Text('Server', style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
-                    ],
-                  ),
-                ).animate().fadeIn(delay: 200.ms, duration: 300.ms),
-
-                if (_showServer) ...[
-                  const SizedBox(height: 10),
-                  _field(_serverCtrl, 'Server URL', TextInputType.url, icon: Icons.dns_outlined),
-                ],
-
-                const SizedBox(height: 16),
-
-                // Form card
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: AppColors.surface,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: AppColors.border),
-                  ),
-                  child: Column(
-                    children: [
-                      if (!_isLogin) ...[
-                        _field(_nameCtrl, 'Name', TextInputType.name, icon: Icons.person_outline_rounded),
-                        const SizedBox(height: 12),
-                      ],
-                      _field(_emailCtrl, 'Email', TextInputType.emailAddress, icon: Icons.email_outlined),
-                      const SizedBox(height: 12),
-                      _field(_passCtrl, 'Password', TextInputType.visiblePassword, obscure: true, icon: Icons.lock_outline_rounded),
-
-                      if (_error != null) ...[
-                        const SizedBox(height: 14),
-                        Row(
-                          children: [
-                            const Icon(Icons.error_outline_rounded, size: 14, color: AppColors.red),
-                            const SizedBox(width: 6),
-                            Expanded(child: Text(_error!, style: const TextStyle(fontSize: 12, color: AppColors.red))),
-                          ],
+      body: DotGridBackground(
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 28),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Logo with glow
+                  Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(14),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.accent.withValues(alpha: 0.2),
+                          blurRadius: 24,
+                          spreadRadius: 0,
                         ),
                       ],
+                    ),
+                    child: Container(
+                      width: 52, height: 52,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(14),
+                        color: AppColors.accent,
+                      ),
+                      child: const Icon(Icons.code_rounded, size: 26, color: AppColors.bg),
+                    ),
+                  ),
 
-                      const SizedBox(height: 20),
+                  const SizedBox(height: 20),
 
-                      // Submit button with press animation
-                      GestureDetector(
-                        onTapDown: _loading ? null : (_) => setState(() => _pressed = true),
-                        onTapUp: _loading ? null : (_) => setState(() => _pressed = false),
-                        onTapCancel: () => setState(() => _pressed = false),
-                        onTap: _loading ? null : _submit,
-                        child: AnimatedScale(
-                          scale: _pressed ? 0.97 : 1.0,
-                          duration: const Duration(milliseconds: 100),
+                  Text('PocketDev',
+                    style: GoogleFonts.inter(fontSize: 28, fontWeight: FontWeight.w300, color: AppColors.text, letterSpacing: -0.5),
+                  ),
+
+                  const SizedBox(height: 4),
+
+                  Text('Control AI from your pocket',
+                    style: GoogleFonts.jetBrainsMono(fontSize: 11, color: AppColors.textFaint, letterSpacing: 0.5)),
+
+                  const SizedBox(height: 8),
+
+                  Text(_isLogin ? 'Welcome back' : 'Create your account',
+                    style: GoogleFonts.inter(fontSize: 13, color: AppColors.textTertiary),
+                  ),
+
+                  const SizedBox(height: 32),
+
+                  // Server URL (collapsible)
+                  GestureDetector(
+                    onTap: () => setState(() => _showServer = !_showServer),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(_showServer ? Icons.expand_less : Icons.expand_more, size: 14, color: AppColors.textFaint),
+                        const SizedBox(width: 4),
+                        Text('Server', style: GoogleFonts.jetBrainsMono(fontSize: 10, color: AppColors.textFaint)),
+                      ],
+                    ),
+                  ),
+
+                  if (_showServer) ...[
+                    const SizedBox(height: 10),
+                    _field(_serverCtrl, 'Server URL', TextInputType.url),
+                  ],
+
+                  const SizedBox(height: 16),
+
+                  // Form card
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.borderSubtle),
+                      color: AppColors.surface.withValues(alpha: 0.5),
+                    ),
+                    child: Column(
+                      children: [
+                        if (!_isLogin) ...[
+                          _field(_nameCtrl, 'Name', TextInputType.name),
+                          const SizedBox(height: 12),
+                        ],
+                        _field(_emailCtrl, 'Email', TextInputType.emailAddress),
+                        const SizedBox(height: 12),
+                        _field(_passCtrl, 'Password', TextInputType.visiblePassword, obscure: true),
+
+                        if (_error != null) ...[
+                          const SizedBox(height: 14),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(6),
+                              color: AppColors.red.withValues(alpha: 0.08),
+                              border: Border.all(color: AppColors.red.withValues(alpha: 0.15)),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.error_outline_rounded, size: 14, color: AppColors.red),
+                                const SizedBox(width: 6),
+                                Expanded(child: Text(_error!, style: GoogleFonts.inter(fontSize: 12, color: AppColors.red))),
+                              ],
+                            ),
+                          ),
+                        ],
+
+                        const SizedBox(height: 20),
+
+                        // Submit
+                        GestureDetector(
+                          onTap: _loading ? null : _submit,
                           child: Container(
                             width: double.infinity,
-                            padding: const EdgeInsets.symmetric(vertical: 15),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
                             decoration: BoxDecoration(
                               color: _loading ? AppColors.surfaceLight : AppColors.text,
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(8),
                             ),
                             child: Center(
                               child: _loading
                                   ? const SizedBox(width: 18, height: 18,
-                                      child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.textMuted))
+                                      child: CircularProgressIndicator(strokeWidth: 1.5, color: AppColors.textTertiary))
                                   : Text(_isLogin ? 'Sign in' : 'Create account',
-                                      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.bg)),
+                                      style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.bg)),
                             ),
                           ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ).animate().fadeIn(delay: 250.ms, duration: 400.ms).slideY(begin: 0.06, end: 0, delay: 250.ms, duration: 400.ms),
-
-                const SizedBox(height: 24),
-
-                GestureDetector(
-                  onTap: () {
-                    HapticFeedback.selectionClick();
-                    setState(() { _isLogin = !_isLogin; _error = null; });
-                  },
-                  child: RichText(
-                    text: TextSpan(
-                      style: const TextStyle(fontSize: 13, color: AppColors.textMuted),
-                      children: [
-                        TextSpan(text: _isLogin ? "Don't have an account? " : 'Already have an account? '),
-                        TextSpan(
-                          text: _isLogin ? 'Sign up' : 'Sign in',
-                          style: const TextStyle(color: AppColors.text, fontWeight: FontWeight.w600),
                         ),
                       ],
                     ),
                   ),
-                ).animate().fadeIn(delay: 350.ms, duration: 300.ms),
-              ],
+
+                  const SizedBox(height: 24),
+
+                  GestureDetector(
+                    onTap: () {
+                      HapticFeedback.selectionClick();
+                      setState(() { _isLogin = !_isLogin; _error = null; });
+                    },
+                    child: RichText(
+                      text: TextSpan(
+                        style: GoogleFonts.inter(fontSize: 12, color: AppColors.textTertiary),
+                        children: [
+                          TextSpan(text: _isLogin ? "Don't have an account? " : 'Already have an account? '),
+                          TextSpan(
+                            text: _isLogin ? 'Sign up' : 'Sign in',
+                            style: GoogleFonts.inter(fontSize: 12, color: AppColors.text, fontWeight: FontWeight.w500),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  if (widget.onSkip != null) ...[
+                    const SizedBox(height: 28),
+                    CustomPaint(
+                      size: const Size(double.infinity, 1),
+                      painter: DashedLinePainter(color: AppColors.borderSubtle),
+                    ),
+                    const SizedBox(height: 16),
+                    GestureDetector(
+                      onTap: widget.onSkip,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.wifi_rounded, size: 14, color: AppColors.textFaint),
+                          const SizedBox(width: 6),
+                          Text('Skip — connect on same WiFi',
+                            style: GoogleFonts.inter(fontSize: 11, color: AppColors.textFaint)),
+                        ],
+                      ),
+                    ),
+                  ],
+                ],
+              ),
             ),
           ),
         ),
@@ -216,23 +256,22 @@ class _AuthScreenState extends State<AuthScreen> {
     );
   }
 
-  Widget _field(TextEditingController ctrl, String hint, TextInputType type, {bool obscure = false, IconData? icon}) {
+  Widget _field(TextEditingController ctrl, String hint, TextInputType type, {bool obscure = false}) {
     return TextField(
       controller: ctrl,
       keyboardType: type,
       obscureText: obscure,
-      style: const TextStyle(fontSize: 15, color: AppColors.text),
+      style: GoogleFonts.inter(fontSize: 14, color: AppColors.text),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 14),
-        prefixIcon: icon != null ? Icon(icon, size: 18, color: AppColors.textMuted) : null,
+        hintStyle: GoogleFonts.inter(fontSize: 13, color: AppColors.textTertiary),
         filled: true,
         fillColor: AppColors.surfaceLight,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.textMuted, width: 1)),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: AppColors.accent.withValues(alpha: 0.3), width: 0.5)),
       ),
       onSubmitted: (_) => _submit(),
     );

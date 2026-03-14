@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_animate/flutter_animate.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:gpt_markdown/gpt_markdown.dart';
 import '../services/session_state.dart';
 import '../theme/colors.dart';
@@ -24,7 +24,7 @@ class CardWidget extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: _buildCard(context),
-    ).animate().fadeIn(duration: 200.ms);
+    );
   }
 
   Widget _buildCard(BuildContext context) {
@@ -63,26 +63,24 @@ class CardWidget extends StatelessWidget {
             child: Row(
               children: [
                 SizedBox(
-                  width: 10,
-                  height: 10,
+                  width: 10, height: 10,
                   child: CircularProgressIndicator(
                     strokeWidth: 1.5,
-                    color: AppColors.textMuted,
+                    color: AppColors.textTertiary,
                   ),
                 ),
                 const SizedBox(width: 8),
-                const Text('Thinking...', style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
+                Text('Thinking...', style: GoogleFonts.inter(fontSize: 11, color: AppColors.textTertiary)),
               ],
             ),
           ),
         if (text.isNotEmpty) ...[
-          // Render markdown properly
           GptMarkdown(
             text,
-            style: const TextStyle(fontSize: 14, color: AppColors.text, height: 1.5),
+            style: GoogleFonts.inter(fontSize: 14, color: AppColors.text, height: 1.6),
           ),
           if (isStreaming)
-            const Text(' \u2588', style: TextStyle(fontSize: 14, color: AppColors.textMuted)),
+            Text(' \u2588', style: GoogleFonts.jetBrainsMono(fontSize: 14, color: AppColors.accent)),
         ],
       ],
     );
@@ -93,13 +91,12 @@ class CardWidget extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(card.file, style: const TextStyle(fontSize: 13, color: AppColors.textMuted, fontFamily: 'monospace')),
+        Text(card.file, style: GoogleFonts.jetBrainsMono(fontSize: 11, color: AppColors.textTertiary)),
         const SizedBox(height: 6),
         Container(
           width: double.infinity,
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: AppColors.surface,
             borderRadius: BorderRadius.circular(8),
             border: Border.all(color: AppColors.border),
           ),
@@ -110,14 +107,13 @@ class CardWidget extends StatelessWidget {
                 for (final line in (hunk['lines'] as List? ?? []))
                   SelectableText(
                     '${line['type'] == 'add' ? '+' : line['type'] == 'remove' ? '-' : ' '} ${line['content']}',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontFamily: 'monospace',
+                    style: GoogleFonts.jetBrainsMono(
+                      fontSize: 12,
                       color: line['type'] == 'add'
                           ? AppColors.green
                           : line['type'] == 'remove'
                               ? AppColors.red
-                              : AppColors.textMuted,
+                              : AppColors.textTertiary,
                     ),
                   ),
             ],
@@ -133,7 +129,6 @@ class CardWidget extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: AppColors.surface,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: AppColors.border),
       ),
@@ -144,14 +139,14 @@ class CardWidget extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(card.command,
-                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.text)),
+                    style: GoogleFonts.jetBrainsMono(fontSize: 12, fontWeight: FontWeight.w500, color: AppColors.text)),
                 if (card.output.isNotEmpty) ...[
                   const SizedBox(height: 4),
                   Text(
                     card.output,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 12, fontFamily: 'monospace', color: AppColors.textMuted),
+                    style: GoogleFonts.jetBrainsMono(fontSize: 11, color: AppColors.textTertiary),
                   ),
                 ],
               ],
@@ -159,9 +154,9 @@ class CardWidget extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           if (isStreaming)
-            SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 1.5, color: AppColors.textMuted))
+            SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 1.5, color: AppColors.textTertiary))
           else
-            const Icon(Icons.check, size: 14, color: AppColors.textMuted),
+            const Icon(Icons.check, size: 14, color: AppColors.textTertiary),
         ],
       ),
     );
@@ -172,16 +167,17 @@ class CardWidget extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.surface,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: AppColors.accent.withValues(alpha: 0.2)),
+        color: AppColors.accentGlow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Approval needed', style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
-          const SizedBox(height: 8),
-          SelectableText(card.prompt, style: const TextStyle(fontSize: 14, color: AppColors.text)),
+          Text('APPROVAL NEEDED', style: GoogleFonts.jetBrainsMono(
+            fontSize: 9, fontWeight: FontWeight.w600, color: AppColors.accent, letterSpacing: 1.5)),
+          const SizedBox(height: 10),
+          SelectableText(card.prompt, style: GoogleFonts.inter(fontSize: 13, color: AppColors.text)),
           const SizedBox(height: 16),
           Row(
             children: [
@@ -189,26 +185,28 @@ class CardWidget extends StatelessWidget {
                 child: GestureDetector(
                   onTap: () { HapticFeedback.mediumImpact(); onApprove(); },
                   child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    padding: const EdgeInsets.symmetric(vertical: 11),
                     decoration: BoxDecoration(
-                      color: AppColors.text,
+                      color: AppColors.accent,
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Center(child: Text('Allow', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.bg))),
+                    child: Center(child: Text('Allow', style: GoogleFonts.inter(
+                      fontSize: 13, fontWeight: FontWeight.w500, color: AppColors.bg))),
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 10),
               Expanded(
                 child: GestureDetector(
                   onTap: () { HapticFeedback.mediumImpact(); onReject(); },
                   child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    padding: const EdgeInsets.symmetric(vertical: 11),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(color: AppColors.border),
                     ),
-                    child: const Center(child: Text('Deny', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textSecondary))),
+                    child: Center(child: Text('Deny', style: GoogleFonts.inter(
+                      fontSize: 13, fontWeight: FontWeight.w500, color: AppColors.textTertiary))),
                   ),
                 ),
               ),
@@ -224,7 +222,6 @@ class CardWidget extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.surface,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: AppColors.border),
       ),
@@ -233,16 +230,16 @@ class CardWidget extends StatelessWidget {
         children: [
           Row(
             children: [
-              Text('${card.passed} passed', style: const TextStyle(fontSize: 13, color: AppColors.green)),
+              Text('${card.passed} passed', style: GoogleFonts.jetBrainsMono(fontSize: 12, color: AppColors.green)),
               if (card.failed > 0) ...[
-                const Text('  ·  ', style: TextStyle(color: AppColors.textMuted)),
-                Text('${card.failed} failed', style: const TextStyle(fontSize: 13, color: AppColors.red)),
+                Text('  ·  ', style: GoogleFonts.inter(color: AppColors.textTertiary)),
+                Text('${card.failed} failed', style: GoogleFonts.jetBrainsMono(fontSize: 12, color: AppColors.red)),
               ],
             ],
           ),
           if (card.summary.isNotEmpty) ...[
             const SizedBox(height: 4),
-            Text(card.summary, style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
+            Text(card.summary, style: GoogleFonts.inter(fontSize: 11, color: AppColors.textTertiary)),
           ],
         ],
       ),
@@ -254,13 +251,12 @@ class CardWidget extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.surface,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.red.withValues(alpha: 0.3)),
+        border: Border.all(color: AppColors.red.withValues(alpha: 0.2)),
       ),
       child: SelectableText(
         card.raw['message'] ?? 'Unknown error',
-        style: const TextStyle(fontSize: 14, color: AppColors.red),
+        style: GoogleFonts.inter(fontSize: 13, color: AppColors.red),
       ),
     );
   }

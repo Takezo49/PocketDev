@@ -11,6 +11,9 @@ class AuthService extends ChangeNotifier {
   static const _keyAppToken = 'app_token';
   static const _keyDeviceId = 'device_id';
   static const _keyDeviceHost = 'device_hostname';
+  static const _keyDirectHost = 'direct_host';
+  static const _keyDirectPort = 'direct_port';
+  static const _keyDirectSecret = 'direct_secret';
 
   String? _token;
   String? _userId;
@@ -21,8 +24,17 @@ class AuthService extends ChangeNotifier {
   String? _deviceHostname;
   bool _ready = false;
 
+  // Direct LAN connection info
+  String? _directHost;
+  int? _directPort;
+  String? _directSecret;
+
   bool get isLoggedIn => _token != null;
-  bool get hasDevice => _appToken != null && _deviceId != null;
+  bool get hasDirectConnection => _directHost != null && _directPort != null && _directSecret != null;
+  String? get directHost => _directHost;
+  int? get directPort => _directPort;
+  String? get directSecret => _directSecret;
+  bool get hasDevice => (_appToken != null && _deviceId != null) || hasDirectConnection;
   bool get ready => _ready;
   String? get token => _token;
   String? get userId => _userId;
@@ -42,6 +54,9 @@ class AuthService extends ChangeNotifier {
     _appToken = prefs.getString(_keyAppToken);
     _deviceId = prefs.getString(_keyDeviceId);
     _deviceHostname = prefs.getString(_keyDeviceHost);
+    _directHost = prefs.getString(_keyDirectHost);
+    _directPort = prefs.getInt(_keyDirectPort);
+    _directSecret = prefs.getString(_keyDirectSecret);
     _ready = true;
     notifyListeners();
   }
@@ -160,6 +175,20 @@ class AuthService extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Save direct LAN connection (from QR scan, no relay needed)
+  Future<void> saveDirectConnection(String host, int port, String secret) async {
+    _directHost = host;
+    _directPort = port;
+    _directSecret = secret;
+    _deviceHostname = host;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_keyDirectHost, host);
+    await prefs.setInt(_keyDirectPort, port);
+    await prefs.setString(_keyDirectSecret, secret);
+    await prefs.setString(_keyDeviceHost, host);
+    notifyListeners();
+  }
+
   Future<void> logout() async {
     _token = null;
     _userId = null;
@@ -176,10 +205,16 @@ class AuthService extends ChangeNotifier {
     _appToken = null;
     _deviceId = null;
     _deviceHostname = null;
+    _directHost = null;
+    _directPort = null;
+    _directSecret = null;
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_keyAppToken);
     await prefs.remove(_keyDeviceId);
     await prefs.remove(_keyDeviceHost);
+    await prefs.remove(_keyDirectHost);
+    await prefs.remove(_keyDirectPort);
+    await prefs.remove(_keyDirectSecret);
     notifyListeners();
   }
 }

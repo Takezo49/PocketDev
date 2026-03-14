@@ -1,0 +1,14 @@
+{
+  "name": "devbox",
+  "private": true,
+  "workspaces": [
+    "packages/daemon",
+    "packages/shared",
+    "packages/mobile"
+  ],
+  "scripts": {
+    "daemon": "cd packages/daemon && npm run dev",
+    "daemon:build": "cd packages/daemon && npm run build",
+    "mobile": "cd packages/mobile && npx expo start"
+  }
+}

@@ -22,6 +22,13 @@ class DevBoxConnection extends ChangeNotifier {
   String get hostname => _hostname;
   Stream<Map<String, dynamic>> get messages => _messageController.stream;
 
+  /// Force status for preview/testing
+  void mockStatus(ConnectionStatus s) {
+    _status = s;
+    _hostname = 'Preview';
+    notifyListeners();
+  }
+
   void connect(String host, int port, String secret) {
     _host = host;
     _port = port;

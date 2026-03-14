@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../services/session_state.dart';
 import '../theme/colors.dart';
 
@@ -31,22 +32,22 @@ class SessionHeader extends StatelessWidget {
               onTap: onModelTap,
               child: Text(
                 _formatModel(model),
-                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.text),
+                style: GoogleFonts.jetBrainsMono(fontSize: 11, fontWeight: FontWeight.w500, color: AppColors.accent),
               ),
             ),
           if (effort.isNotEmpty) ...[
             const SizedBox(width: 12),
-            Text(effort, style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
+            Text(effort, style: GoogleFonts.jetBrainsMono(fontSize: 10, color: AppColors.textTertiary)),
           ],
           if (queue > 0) ...[
             const SizedBox(width: 12),
-            Text('$queue queued', style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
+            Text('$queue queued', style: GoogleFonts.jetBrainsMono(fontSize: 10, color: AppColors.textTertiary)),
           ],
           const Spacer(),
           if (cost > 0)
             Text(
               '\$${cost.toStringAsFixed(4)}',
-              style: const TextStyle(fontSize: 13, fontFamily: 'monospace', color: AppColors.textMuted),
+              style: GoogleFonts.jetBrainsMono(fontSize: 11, color: AppColors.textTertiary),
             ),
         ],
       ),
@@ -76,7 +77,7 @@ class ContextBar extends StatelessWidget {
       child: FractionallySizedBox(
         alignment: Alignment.centerLeft,
         widthFactor: ratio.clamp(0, 1),
-        child: Container(color: AppColors.textMuted),
+        child: Container(color: AppColors.accent),
       ),
     );
   }
