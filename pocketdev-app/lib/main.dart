@@ -32,6 +32,10 @@ class DevBoxApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => AuthService()..init()),
         ChangeNotifierProvider(create: (_) => DevBoxConnection()),
+        ChangeNotifierProxyProvider<DevBoxConnection, SessionState>(
+          create: (ctx) => SessionState(ctx.read<DevBoxConnection>()),
+          update: (_, conn, prev) => prev ?? SessionState(conn),
+        ),
       ],
       child: MaterialApp(
         title: 'PocketDev',
@@ -129,37 +133,29 @@ class _AppRouterState extends State<AppRouter> {
         return Scaffold(
           backgroundColor: AppColors.bg,
           body: SafeArea(
-            child: ChangeNotifierProxyProvider<DevBoxConnection, SessionState>(
-              create: (ctx) {
-                final state = SessionState(ctx.read<DevBoxConnection>());
-                state.workspaceCwd = _selectedWorkspace;
-                return state;
-              },
-              update: (_, conn, prev) => prev ?? SessionState(conn),
-              child: SessionScreen(
-                workspaceName: _selectedWorkspaceName,
-                onNeedsPairing: () {
-                  auth.unpairDevice();
-                  setState(() {
-                    _activeTool = null;
-                    _selectedWorkspace = null;
-                    _selectedWorkspaceName = null;
-                    _showWorkspacePicker = false;
-                    _autoConnected = false;
-                  });
-                },
-                onBack: () => setState(() {
+            child: SessionScreen(
+              workspaceName: _selectedWorkspaceName,
+              onNeedsPairing: () {
+                auth.unpairDevice();
+                setState(() {
                   _activeTool = null;
                   _selectedWorkspace = null;
                   _selectedWorkspaceName = null;
                   _showWorkspacePicker = false;
-                }),
-                onChangeWorkspace: () => setState(() {
-                  _selectedWorkspace = null;
-                  _selectedWorkspaceName = null;
-                  _showWorkspacePicker = true;
-                }),
-              ),
+                  _autoConnected = false;
+                });
+              },
+              onBack: () => setState(() {
+                _activeTool = null;
+                _selectedWorkspace = null;
+                _selectedWorkspaceName = null;
+                _showWorkspacePicker = false;
+              }),
+              onChangeWorkspace: () => setState(() {
+                _selectedWorkspace = null;
+                _selectedWorkspaceName = null;
+                _showWorkspacePicker = true;
+              }),
             ),
           ),
         );
@@ -171,6 +167,7 @@ class _AppRouterState extends State<AppRouter> {
         update: (_, conn, prev) => prev ?? WorkspaceState(conn),
         child: WorkspacePickerScreen(
           onSelectWorkspace: (path, name) {
+            context.read<SessionState>().selectSessionForWorkspace(path);
             setState(() {
               _selectedWorkspace = path;
               _selectedWorkspaceName = name;
@@ -192,6 +189,7 @@ class _AppRouterState extends State<AppRouter> {
       child: DashboardScreen(
         onSelectTool: _selectTool,
         onSelectToolWithWorkspace: (toolId, path, name) {
+          context.read<SessionState>().selectSessionForWorkspace(path);
           setState(() {
             _activeTool = toolId;
             _selectedWorkspace = path;
@@ -243,13 +241,9 @@ class _AppRouterState extends State<AppRouter> {
         return Scaffold(
           backgroundColor: AppColors.bg,
           body: SafeArea(
-            child: ChangeNotifierProxyProvider<DevBoxConnection, SessionState>(
-              create: (ctx) => SessionState(ctx.read<DevBoxConnection>()),
-              update: (_, conn, prev) => prev ?? SessionState(conn),
-              child: SessionScreen(
-                onNeedsPairing: () {},
-                onBack: () {},
-              ),
+            child: SessionScreen(
+              onNeedsPairing: () {},
+              onBack: () {},
             ),
           ),
         );

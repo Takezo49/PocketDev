@@ -220,6 +220,26 @@ class SessionState extends ChangeNotifier {
         notifyListeners();
         break;
 
+      case 'session:cards':
+        // Populate cards from daemon history (only if no local cards for this session)
+        final histSessionId = msg['sessionId'] ?? '';
+        final hasLocal = _cards.any((c) => c.sessionId == histSessionId);
+        if (!hasLocal) {
+          final histCards = msg['cards'] as List? ?? [];
+          for (final c in histCards) {
+            final card = c is Map<String, dynamic> ? c : <String, dynamic>{};
+            _cards.add(CardData(
+              id: card['id'] ?? 'hist-${DateTime.now().millisecondsSinceEpoch}',
+              type: card['type'] ?? 'message',
+              sessionId: card['sessionId'] ?? histSessionId,
+              timestamp: card['timestamp'] ?? 0,
+              raw: card,
+            ));
+          }
+          notifyListeners();
+        }
+        break;
+
       case 'card':
         final card = msg['card'] as Map<String, dynamic>;
         _cards.add(CardData(
@@ -382,6 +402,39 @@ class SessionState extends ChangeNotifier {
   void setActiveSession(String id) {
     _activeSessionId = id;
     notifyListeners();
+  }
+
+  /// Select (or clear) the session for a given workspace directory.
+  /// Finds an existing session matching that cwd; if found and no local cards
+  /// exist, requests card history from the daemon.
+  void selectSessionForWorkspace(String? cwd) {
+    workspaceCwd = cwd;
+
+    if (cwd == null) {
+      _activeSessionId = null;
+      notifyListeners();
+      return;
+    }
+
+    // Find an existing session matching this workspace
+    final match = _sessions.where((s) => s.cwd == cwd).firstOrNull;
+    if (match != null) {
+      _activeSessionId = match.id;
+      // If we have no local cards for this session, request history from daemon
+      final hasLocalCards = _cards.any((c) => c.sessionId == match.id);
+      if (!hasLocalCards) {
+        requestHistory(match.id);
+      }
+    } else {
+      _activeSessionId = null;
+    }
+
+    notifyListeners();
+  }
+
+  /// Request card history from the daemon for a session.
+  void requestHistory(String sessionId) {
+    _conn.send({'type': 'session:history', 'sessionId': sessionId});
   }
 
   void createSession(String tool, {String? cwd}) {

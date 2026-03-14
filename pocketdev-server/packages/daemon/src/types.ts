@@ -144,6 +144,7 @@ export type DaemonMessage =
   | { type: 'projects:data'; projects: ProjectInfo[] }
   | { type: 'projects:dirs'; path: string; dirs: DirEntry[] }
   | { type: 'projects:search_results'; results: { path: string; name: string; hasGit: boolean; isFile: boolean }[] }
+  | { type: 'session:cards'; sessionId: string; cards: any[] }
   | { type: 'error'; message: string };
 
 // Mobile -> Daemon
@@ -161,7 +162,8 @@ export type MobileMessage =
   | { type: 'projects:browse'; path: string }
   | { type: 'workspace:save'; path: string; name: string }
   | { type: 'workspace:remove'; path: string }
-  | { type: 'projects:search'; query: string };
+  | { type: 'projects:search'; query: string }
+  | { type: 'session:history'; sessionId: string };
 
 // --- Pairing ---
 

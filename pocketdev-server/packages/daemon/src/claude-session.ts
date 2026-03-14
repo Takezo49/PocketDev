@@ -53,6 +53,9 @@ export class ClaudeSession extends EventEmitter {
   // Store Write tool inputs so we can show written content
   private writeToolInputs = new Map<string, { file_path: string; content: string }>();
 
+  // Card history (survives app reconnect)
+  private _cardHistory: any[] = [];
+
   // Usage tracking
   public cumulativeCost = 0;
   public lastUsage: UsageInfo | null = null;
@@ -354,6 +357,16 @@ export class ClaudeSession extends EventEmitter {
             toolId: toolUseId,
             input: '',
           });
+
+          // Store command card in history
+          this._cardHistory.push({
+            id: toolCardId,
+            type: 'command',
+            sessionId: this.id,
+            timestamp: Date.now(),
+            command: toolName,
+            output: '',
+          });
         }
 
         break;
@@ -404,6 +417,12 @@ export class ClaudeSession extends EventEmitter {
                 tool: block.name,
                 summary,
               });
+
+              // Update command card output in history
+              const histIdx = this._cardHistory.findIndex((c: any) => c.id === tracked.cardId);
+              if (histIdx >= 0) {
+                this._cardHistory[histIdx] = { ...this._cardHistory[histIdx], output: summary };
+              }
             }
           }
         }
@@ -472,6 +491,18 @@ export class ClaudeSession extends EventEmitter {
             contentType,
           });
 
+          // Store tool_result in history
+          this._cardHistory.push({
+            id: `tr-${toolUseId}-${Date.now()}`,
+            type: 'tool_result',
+            sessionId: this.id,
+            timestamp: Date.now(),
+            toolName,
+            content: content.slice(0, 50000),
+            contentType,
+            truncated: content.length >= 50000,
+          });
+
           // Use the TRACKED card ID so Flutter can find the spinner card
           const toolCardId = tracked?.cardId || this.currentCardId;
           this.emit('stream:tool_end', {
@@ -523,6 +554,18 @@ export class ClaudeSession extends EventEmitter {
           toolId: toolUseId,
           content: content.slice(0, 50000),
           contentType,
+        });
+
+        // Store tool_result in history (fallback path)
+        this._cardHistory.push({
+          id: `tr-${toolUseId}-${Date.now()}`,
+          type: 'tool_result',
+          sessionId: this.id,
+          timestamp: Date.now(),
+          toolName,
+          content: content.slice(0, 50000),
+          contentType,
+          truncated: content.length >= 50000,
         });
 
         const tracked2 = this.toolCardIds.get(toolUseId);
@@ -577,6 +620,20 @@ export class ClaudeSession extends EventEmitter {
     this._status = 'stopped';
   }
 
+  addUserPrompt(text: string): void {
+    this._cardHistory.push({
+      id: `user-${Date.now()}`,
+      type: 'user_prompt',
+      sessionId: this.id,
+      timestamp: Date.now(),
+      text,
+    });
+  }
+
+  getCardHistory(): any[] {
+    return this._cardHistory;
+  }
+
   toJSON(): Session {
     return {
       id: this.id,
@@ -596,12 +653,14 @@ export class ClaudeSession extends EventEmitter {
   }
 
   private _makeCard(type: string, data: Record<string, any>): Card {
-    return {
+    const card = {
       id: this._makeCardId(),
       type,
       timestamp: Date.now(),
       sessionId: this.id,
       ...data,
     } as Card;
+    this._cardHistory.push(card);
+    return card;
   }
 }

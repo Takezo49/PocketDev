@@ -173,6 +173,7 @@ export class DevBoxServer extends EventEmitter {
         const session = this.sessions.getSession(msg.sessionId);
         if (session) {
           console.log(`  [prompt] ${msg.sessionId}: ${msg.text.slice(0, 60)}...`);
+          session.addUserPrompt(msg.text);
           session.sendPrompt(msg.text);
         } else {
           this.sendTo(clientId, { type: 'error', message: `Session ${msg.sessionId} not found` });
@@ -198,6 +199,18 @@ export class DevBoxServer extends EventEmitter {
           session.setConfig(msg.config);
         } else {
           this.sendTo(clientId, { type: 'error', message: `Session ${msg.sessionId} not found` });
+        }
+        break;
+      }
+
+      case 'session:history': {
+        const session = this.sessions.getSession(msg.sessionId);
+        if (session) {
+          this.sendTo(clientId, {
+            type: 'session:cards',
+            sessionId: msg.sessionId,
+            cards: session.getCardHistory(),
+          });
         }
         break;
       }
