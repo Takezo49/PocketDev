@@ -55,7 +55,7 @@ A QR code appears in your terminal. That's it.
 
 ### 2. Install the app on your phone
 
-Download **PocketDev** from Google Play *(iOS coming soon)*.
+Go to [pocketdev.welocalhost.com](https://pocketdev.welocalhost.com) and tap **Download** to get the Android APK. *(iOS coming soon)*
 
 ### 3. Scan & code
 
